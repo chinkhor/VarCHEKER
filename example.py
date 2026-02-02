@@ -14,13 +14,15 @@ def M(a, b=10):
         x = 1
     elif ENABLE_Y:
         x = 2
-    else:
+    elif ENABLE_Z:
         x = 3
+    else:
+        x = 4
     return x
 
-x = 1
+x = 100
 if ENABLE_AEB:
-    if not TEST_MODE or x == 1:
+    if not TEST_MODE or k == 1:
         activate_autonomous_braking()
     else:
         M(3)
@@ -35,31 +37,49 @@ else:
 try:
     x = 1 / 0
 except ZeroDivisionError as e:
-    if x == 0:
+    if q == 0:
         print("divide by zero", e)
 except Exception:
     print("other error")
 else:
-    if x == 0:
+    if c == 0:
         x += 1
     else:
         x = 0
 finally:
-    if y == 0:
+    if d == 0:
         y += 1
-    elif y > 0:
+    elif d > 0:
         y = 0
 
-try:
-   x = 10
-except Exception:
-   raise Exception("Error")
+if ENABLE_P:
+    try:
+        x = 10
+    except Exception:
+        raise Exception("Error")
 
-for x in range(100):
-   print(x)
+for cfg.getFrames in range(100):
+   print(cfg.getFrames)
 
-while x < 100:
+while self.cfg.getPose < 100:
    x -= 1
 else:
    x = 0
 
+def __handle_special_case(self):
+   special_case = any([self.getFrames, self.getPose, self.autoFocus])
+   if special_case:
+        self.fps = 10.0
+        self.pixel_format = "Bgr8"
+        if self.camera_type == "allied":
+            self.resolution = (2464, 2064)
+        else:
+            self.resolution = (2048, 1536)
+
+stereo_configs = [self.getFrames, self.getPose]
+for cfg in stereo_configs:
+   if cfg in vars(self):
+        stereo_configs[cfg] = getattr(self, cfg)
+
+####
+####

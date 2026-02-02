@@ -1,122 +1,196 @@
 import ast
 import sys
 
-class PresenceConditionExtractor():
-    def __init__(self):
-        self.line_no = 0
+class PresenceConditionVisitor(ast.NodeVisitor):
+    def __init__(self, supported_features):
+        self.conditions = {}
+        # 1. Change evaluation output from "True" to "1"
+        self.path_condition = "1"
+        self.env = {}
+        self.supported_features = supported_features
 
-    def print_line(self, line_no, stmt, stmt_type):
-        while line_no > self.line_no + 1:
-            self.line_no += 1
-            print(f"{self.line_no:5d}:")
-        print(f"{line_no:5d}: {stmt:60s} [{stmt_type}]")
-        self.line_no += 1
+    def record(self, node, alt_cond=None):
+        if hasattr(node, "lineno"):
+            cond = alt_cond if alt_cond else self.path_condition
+            self.conditions[node.lineno] = cond
 
-    def elif_handling(self, node):
-        while len(node.orelse) == 1 and isinstance(node.orelse[0], ast.If):
-            node = node.orelse[0]
-            self.print_line(node.lineno, f"if {ast.unparse(node.test)}", "elif")
-            for stmt in node.body:
-                self.process_node(stmt)
-        return node
-        
-    def expr_handling(self, node):
-        self.print_line(node.lineno, ast.unparse(node), "expr")
+    def combine_logic(self, base, new):
+        if new == "" or new == "1" or new == "!()":
+            return base
+        if base == "1":
+            return new
+        return f"({base}) && ({new})"
 
-    def else_handling(self, node):
-        if len(node) != 0:
-            self.print_line(node[0].lineno - 1, "else", "else")
-        for stmt in node:
-            self.process_node(stmt)
+    def expr_to_str(self, expr, target_id=None):
+        if expr is None:
+            return ""
 
-    def if_handling(self, node):
-        self.print_line(node.lineno, f"if {ast.unparse(node.test)}", "if")
-        for stmt in node.body:
-            self.process_node(stmt)
-        # process "elif" block if there exists
-        node = self.elif_handling(node)
-        # process "else" block if there exists
-        self.else_handling(node.orelse)
+        if isinstance(expr, ast.Name):
+            if expr.id in self.env:
+                return self.env[expr.id]
+            if expr.id in self.supported_features:
+                return expr.id
+            if target_id and expr.id == target_id:
+                return expr.id
+            return ""
 
-    def while_handling(self, node):
-        self.print_line(node.lineno, f"while {ast.unparse(node.test)}", "while")
-        for stmt in node.body:
-            self.process_node(stmt)
-        # process "else" block if there exists
-        self.else_handling(node.orelse)
+        if isinstance(expr, ast.Attribute):
+            if expr.attr in self.supported_features or (target_id and expr.attr == target_id):
+                return expr.attr
+            val_str = self.expr_to_str(expr.value, target_id=target_id)
+            if not val_str:
+                return expr.attr
+            return f"{val_str}.{expr.attr}"
 
-    def for_handling(self, node):
-        for_cond = ast.unparse(node).splitlines()[0]
-        self.print_line(node.lineno, for_cond, "for")
-        for stmt in node.body:
-            self.process_node(stmt)
-        # process "else" block if there exists
-        self.else_handling(node.orelse)
+        if isinstance(expr, ast.Constant):
+            return str(expr.value)
 
-    def function_handling(self, node):
-        func = ast.unparse(node).splitlines()[0]
-        self.print_line(node.lineno, func, "function")
-        for stmt in node.body:
-            self.process_node(stmt)
+        if isinstance(expr, ast.BoolOp):
+            op = " || " if isinstance(expr.op, ast.Or) else " && "
+            valid_parts = [self.expr_to_str(v) for v in expr.values]
+            # 1. Check for "1" instead of "True"
+            valid_parts = [v for v in valid_parts if v and v != "1"]
+            if valid_parts:
+                return f"({op.join(valid_parts)})"
+            return "1"
 
-    def class_handling(self, node):
-        class_node = ast.unparse(node).splitlines()[0]
-        self.print_line(node.lineno, class_node, "class")
-        for stmt in node.body:
-            self.process_node(stmt)
+        if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
+            operand = self.expr_to_str(expr.operand)
+            if not operand or operand == "1":
+                return "1"
+            return f"!({operand})"
 
-    def finally_handling(self, node):
-        if len(node) != 0:
-            self.print_line(node[0].lineno - 1, "finally", "finally")
-        for stmt in node:
-            self.process_node(stmt)
+        if isinstance(expr, ast.Compare):
+            left = self.expr_to_str(expr.left)
+            ops = {ast.Eq: "==", ast.NotEq: "!=", ast.Lt: "<", ast.Gt: ">"}
+            op_sym = ops.get(type(expr.ops[0]), "?")
+            right = self.expr_to_str(expr.comparators[0])
+            if not left or not right:
+                return ""
+            return f"({left} {op_sym} {right})"
 
-    def except_handling(self, node):
-        for handler in node:
-            etype = ast.unparse(handler.type) if handler.type else "Any"
-            if handler.name is not None:
-                self.print_line(handler.lineno, f"except {etype} as {handler.name}:", "except")
-            else:
-                self.print_line(handler.lineno, f"except {etype}:", "except")
-            for stmt in handler.body:
-                self.process_node(stmt)
+        if isinstance(expr, ast.Call):
+            if isinstance(expr.func, ast.Name):
+                if expr.func.id == "any" and isinstance(expr.args[0], ast.List):
+                    elts = [self.expr_to_str(e, target_id=target_id) for e in expr.args[0].elts]
+                    elts = [e for e in elts if e]
+                    return f"({' || '.join(elts)})" if elts else ""
+                
+                if expr.func.id == "range" and target_id:
+                    stop = self.expr_to_str(expr.args[0], target_id=target_id)
+                    if stop:
+                        return f"{target_id} < {stop}"
+            return ""
+        return ""
 
-    def try_handling(self, node):
-        self.print_line(node.lineno, "try", "try")
-        for stmt in node.body:
-            self.process_node(stmt)
-        self.except_handling(node.handlers)
-        self.else_handling(node.orelse)
-        self.finally_handling(node.finalbody)
+    def visit_FunctionDef(self, node):
+        self.record(node)
+        self.generic_visit(node)
 
-    def process_node(self, node):
-        if isinstance(node, ast.Try):
-            self.try_handling(node)
-        elif isinstance(node, ast.ClassDef):
-            self.class_handling(node)
-        elif isinstance(node, ast.FunctionDef):
-            self.function_handling(node)
-        elif isinstance(node, ast.If):
-            self.if_handling(node)
-        elif isinstance(node, ast.While):
-            self.while_handling(node)
-        elif isinstance(node, ast.For):
-            self.for_handling(node)
-        else:
-            self.expr_handling(node)
+    def visit_ClassDef(self, node):
+        self.record(node)
+        self.generic_visit(node)
 
-def extract_presence_conditions(code):
+    def visit_Assign(self, node):
+        self.record(node)
+        if isinstance(node.targets[0], ast.Name):
+            var_name = node.targets[0].id
+            self.env[var_name] = self.expr_to_str(node.value)
+        self.generic_visit(node)
+
+    def visit_If(self, node):
+        self.record(node)
+        cond_str = self.expr_to_str(node.test)
+        old_path = self.path_condition
+        self.path_condition = self.combine_logic(old_path, cond_str)
+        for stmt in node.body: self.visit(stmt)
+        if node.orelse:
+            negated_cond = f"!({cond_str})" if cond_str else ""
+            self.path_condition = self.combine_logic(old_path, negated_cond)
+            if not isinstance(node.orelse[0], ast.If):
+                self.conditions[node.orelse[0].lineno - 1] = self.path_condition
+            for stmt in node.orelse: self.visit(stmt)
+        self.path_condition = old_path
+
+    def visit_Try(self, node):
+        self.record(node)
+        old_path = self.path_condition
+        accumulated_exceptions = []
+        for stmt in node.body: self.visit(stmt)
+        for handler in node.handlers:
+            exc_name = "BaseException" if handler.type is None else self.expr_to_str(handler.type)
+            not_prev = "".join([f"!({e}) && " for e in accumulated_exceptions])
+            handler_cond = f"{not_prev}({exc_name})"
+            if old_path != "1":
+                handler_cond = f"({old_path}) && {handler_cond}"
+            self.conditions[handler.lineno] = handler_cond
+            self.path_condition = handler_cond
+            for stmt in handler.body: self.visit(stmt)
+            accumulated_exceptions.append(exc_name)
+        if node.orelse:
+            not_all_exc = "".join([f"!({e}) && " for e in accumulated_exceptions]).strip(" && ")
+            else_cond = self.combine_logic(old_path, not_all_exc)
+            self.conditions[node.orelse[0].lineno - 1] = else_cond
+            self.path_condition = else_cond
+            for stmt in node.orelse: self.visit(stmt)
+        self.path_condition = old_path
+        if node.finalbody:
+            self.conditions[node.finalbody[0].lineno - 1] = old_path
+            for stmt in node.finalbody: self.visit(stmt)
+
+    def visit_For(self, node):
+        target_id = node.target.id if isinstance(node.target, ast.Name) else (node.target.attr if isinstance(node.target, ast.Attribute) else None)
+        cond_str = self.expr_to_str(node.iter, target_id=target_id)
+        old_path = self.path_condition
+        self.path_condition = self.combine_logic(old_path, cond_str)
+        self.record(node) 
+        for stmt in node.body: self.visit(stmt)
+        if node.orelse:
+            negated = f"!({cond_str})" if cond_str else ""
+            self.path_condition = self.combine_logic(old_path, negated)
+            self.conditions[node.orelse[0].lineno - 1] = self.path_condition
+            for stmt in node.orelse: self.visit(stmt)
+        self.path_condition = old_path
+
+    def visit_While(self, node):
+        self.record(node)
+        cond_str = self.expr_to_str(node.test)
+        old_path = self.path_condition
+        self.path_condition = self.combine_logic(old_path, cond_str)
+        for stmt in node.body: self.visit(stmt)
+        if node.orelse:
+            negated = f"!({cond_str})" if cond_str else ""
+            self.path_condition = self.combine_logic(old_path, negated)
+            self.conditions[node.orelse[0].lineno - 1] = self.path_condition
+            for stmt in node.orelse: self.visit(stmt)
+        self.path_condition = old_path
+
+    def visit_Return(self, node): self.record(node)
+    def visit_Raise(self, node): self.record(node)
+    def visit_Expr(self, node): self.record(node)
+    def visit_AugAssign(self, node): self.record(node)
+
+def extract_presence_conditions(code, supported_features):
     tree = ast.parse(code)
-    pc = PresenceConditionExtractor()
-    for node in tree.body:
-        pc.process_node(node)
+    visitor = PresenceConditionVisitor(supported_features)
+    visitor.visit(tree)
+    
+    # 2 & 3. Remove "Line XX" and handle blank lines/comments
+    lines = code.splitlines()
+    for i in range(1, len(lines) + 1):
+        # If the line was visited, print its condition; otherwise, it's blank/comment so print "1"
+        print(visitor.conditions.get(i, "1"))
+
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python3 presence_conditions.py <file.py>")
-        sys.exit(1)
+    supported_features = [
+        "ENABLE_AEB", "TEST_MODE", "ENABLE_X", "ENABLE_Y", "ENABLE_Z", "ENABLE_P", 
+        "DEBUG", "VERBOSE", "getFrames", "getPose", "autoFocus", "Exception", 
+        "camera_type", "ZeroDivisionError", "allied"
+    ]
 
-    with open(sys.argv[1], "r") as f:
-        code = f.read()
+    if len(sys.argv) > 1:
+        with open(sys.argv[1], "r") as f:
+            code = f.read()
+        extract_presence_conditions(code, supported_features)
 
-    extract_presence_conditions(code)
