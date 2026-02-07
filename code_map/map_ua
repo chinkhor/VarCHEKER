@@ -1,0 +1,9 @@
+cfg.live live
+cfg.pixel_format pixel_format
+cfg.autoFocus autoFocus
+cfg.undistort undistort
+cfg.perform_undistort_from_lucid_api perform_undistort_from_lucid_api
+cfg.camStream camStream
+cfg.camReboot camReboot
+cfg.camStatus camStatus
+cfg.camSetting camSetting

@@ -1,0 +1,15 @@
+01_Presence Condition,02_Total Lines in Code,03_Line Coverage Precentage
+live,44,39.64
+!(camStream || autoFocus),28,25.23
+!live,13,11.71
+camStream || autoFocus,7,6.31
+live && !autoFocus,4,3.6
+(!(camStream || autoFocus)) && Exception,4,3.6
+live && undistort && perform_undistort_from_lucid_api,3,2.7
+(camStream || autoFocus) && !camStream,2,1.8
+(camStream || autoFocus) && camStream,1,0.9
+(!(camStream || autoFocus)) && camReboot,1,0.9
+(!(camStream || autoFocus)) && !camReboot,1,0.9
+((!(camStream || autoFocus)) && !camReboot) && camStatus,1,0.9
+((!(camStream || autoFocus)) && !camReboot) && !camStatus,1,0.9
+(((!(camStream || autoFocus)) && !camReboot) && !camStatus) && camSetting,1,0.9

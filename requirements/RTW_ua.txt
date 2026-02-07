@@ -1,0 +1,80 @@
+ID --> UA-0
+Valid --> 1
+Rule --> R1
+Parent --> root
+Child --> UA_app
+Req -->  
+Source --> 
+
+ID --> UA-1 
+Valid --> 1
+Rule --> R3
+Parent --> UA_app
+Child --> cfg.live
+Req --> 
+Source --> 
+
+ID --> UA-1.1
+Valid --> 1
+Rule --> R3
+Parent --> cfg.live
+Child --> cfg.camStream
+Req --> 
+Source --> 
+
+ID --> UA-1.2 
+Valid --> 1
+Rule --> R2
+Parent --> cfg.live
+Child --> cfg.pixel_format
+Req --> 
+Source -->  
+
+ID --> UA-1.3 
+Valid --> 1
+Rule --> R3
+Parent --> cfg.live
+Child --> cfg.perform_undistort_from_lucid_api
+Req --> 
+Source --> 
+
+ID --> UA-1.4 
+Valid --> 1
+Rule --> R3
+Parent --> cfg.live
+Child --> cfg.autoFocus
+Req --> 
+Source --> 
+
+ID --> UA-1.5 
+Valid --> 1
+Rule --> R3
+Parent --> cfg.live
+Child --> Camera_Commands
+Req --> 
+Source --> 
+
+ID --> UA-1.5.1 
+Valid --> 1
+Rule --> R3
+Parent --> Camera_Commands
+Child --> cfg.camReboot, cfg.camStatus, cfg.camSetting
+Req --> 
+Source --> 
+
+ID --> UA-2
+Valid --> 1
+Rule --> R3
+Parent --> UA_app
+Child --> cfg.undistort
+Req --> 
+Source --> 
+
+ID --> UA-2.1
+Valid --> 1
+Rule --> R7
+Parent --> cfg.perform_undistort_from_lucid_api
+Child --> cfg.undistort
+Req --> 
+Source --> 
+

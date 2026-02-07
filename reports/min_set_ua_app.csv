@@ -1,0 +1,11 @@
+01_Feature,cfg1,cfg2,cfg3,cfg4,cfg5
+camReboot,False,False,False,False,True
+pixel_format,True,False,True,True,True
+live,True,False,True,True,True
+camStream,False,False,True,False,False
+perform_undistort_from_lucid_api,True,False,False,False,False
+camStatus,False,True,any,any,any
+undistort,True,False,False,False,False
+autoFocus,False,False,True,True,False
+camSetting,True,any,any,any,any
+Exception,True,any,any,any,any

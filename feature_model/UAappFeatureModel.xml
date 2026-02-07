@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<featureModel>
+	<properties>
+		<graphics key="autolayoutconstraints" value="false"/>
+		<graphics key="legendposition" value="1223,200"/>
+		<graphics key="legendautolayout" value="false"/>
+		<graphics key="showconstraints" value="true"/>
+		<graphics key="showshortnames" value="false"/>
+		<graphics key="layout" value="horizontal"/>
+		<graphics key="showcollapsedconstraints" value="true"/>
+		<graphics key="legendhidden" value="false"/>
+		<graphics key="layoutalgorithm" value="1"/>
+	</properties>
+	<struct>
+		<and abstract="true" mandatory="true" name="UA_app">
+		<description>Requirements: ['UA-1', 'UA-2']</description>
+		<and name="live">
+		<description>Requirements: ['UA-1', 'UA-1.1', 'UA-1.2', 'UA-1.3', 'UA-1.4', 'UA-1.5']</description>
+			<feature name="camStream">
+			<description>Requirements: ['UA-1.1']</description>
+			</feature>
+			<feature mandatory="true" name="pixel_format">
+			<description>Requirements: ['UA-1.2']</description>
+			</feature>
+			<feature name="perform_undistort_from_lucid_api">
+			<description>Requirements: ['UA-1.3', 'UA-2.1']</description>
+			</feature>
+			<feature name="autoFocus">
+			<description>Requirements: ['UA-1.4']</description>
+			</feature>
+		<and abstract="true" name="Camera_Commands">
+		<description>Requirements: ['UA-1.5', 'UA-1.5.1']</description>
+			<feature name="camReboot">
+			<description>Requirements: ['UA-1.5.1']</description>
+			</feature>
+			<feature name="camStatus">
+			<description>Requirements: ['UA-1.5.1']</description>
+			</feature>
+			<feature name="camSetting">
+			<description>Requirements: ['UA-1.5.1']</description>
+			</feature>
+		</and>
+		</and>
+			<feature name="undistort">
+			<description>Requirements: ['UA-2', 'UA-2.1']</description>
+			</feature>
+		</and>
+	</struct>
+	<constraints>
+		<rule>
+		<description>Constraint Requirement: UA-2.1</description>
+			<imp>
+				<var>perform_undistort_from_lucid_api</var>
+				<var>undistort</var>
+			</imp>
+		</rule>
+	</constraints>
+</featureModel>
