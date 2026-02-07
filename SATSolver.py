@@ -196,8 +196,8 @@ class SATSolver:
         self.configs_pc = []
         for count in range(len(self.presenceConditionAssignments)):
             pc_check_list.append('O')
-            print(self.presenceConditionAssignments[count])
-        print()
+            #print(self.presenceConditionAssignments[count])
+
         while 'O' in pc_check_list:
             self.buildModel()
             push_pc = []
@@ -206,19 +206,15 @@ class SATSolver:
             while 'O' in pc_check_list:
                 index = pc_check_list.index('O')
                 pc = self.presenceConditionAssignments[index]
-                print(f"pc: {pc}")
                 for assignment in pc:
-                    print(f"      asignment: {assignment}")
                     self.solver.add(assignment)
                     push_pc.append(assignment)
                 push_count = len(pc)
                 if self.runModelCheck() == sat:
-                    print("@@@ SAT")
                     # check the item with 'S' to indicate the associated presence condition assignments are satisfied
                     pc_check_list[index] = 'S'
                     config_pc.append(self.assignment2presence_cond[str(pc)])
                 else:
-                    print("### UNSAT")
                     # if unsatisfied, temporarily check the item with 'X' 
                     pc_check_list[index] = 'X'
                     # rebuild the model with the unsatisfied assignments excluded
@@ -232,13 +228,13 @@ class SATSolver:
                         print("Error in backtracking")   
             # add the solution to the list
             self.configSet.append(self.model)
-            print(pc_check_list)
+            #print(pc_check_list)
             self.configs_pc.append(config_pc)
             # revert back all 'X' item to 'O' and repeat the process
             while 'X' in pc_check_list:
                 index = pc_check_list.index('X')
                 pc_check_list[index] = 'O'
-            print()
+
 
     def getMinConfigSet(self):
         self.feature_not_in_code = []
