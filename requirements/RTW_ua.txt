@@ -26,7 +26,15 @@ ID --> UA-1.2
 Valid --> 1
 Rule --> R2
 Parent --> cfg.live
-Child --> cfg.pixel_format
+Child --> abstract_pixel_format_choice
+Req --> 
+Source -->  
+
+ID --> UA-1.2.1
+Valid --> 1
+Rule --> R4
+Parent --> abstract_pixel_format_choice
+Child --> cfg.pixel_format_eq_to_BayerRG8, cfg.pixel_format_eq_to_Mono8, cfg.pixel_format_eq_to_RGB8
 Req --> 
 Source -->  
 

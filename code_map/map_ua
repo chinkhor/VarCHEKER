@@ -1,5 +1,8 @@
 cfg.live live
-cfg.pixel_format pixel_format
+abstract_pixel_format_choice abstract_pixel_format_choice
+cfg.pixel_format_eq_to_BayerRG8 pixel_format_eq_to_BayerRG8
+cfg.pixel_format_eq_to_Mono8 pixel_format_eq_to_Mono8
+cfg.pixel_format_eq_to_RGB8 pixel_format_eq_to_RGB8
 cfg.autoFocus autoFocus
 cfg.undistort undistort
 cfg.perform_undistort_from_lucid_api perform_undistort_from_lucid_api

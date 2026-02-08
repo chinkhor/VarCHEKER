@@ -76,7 +76,6 @@ class RTW_Node:
 class RTW:
     def __init__(self, filename, feature_map=None):
         self.root = None
-        self.sentences = []
         self.solutions = []
         self.FM_XML = []
         self.constraints = {}
@@ -87,7 +86,14 @@ class RTW:
         self.code2feature_map = {}
         self.dict_result = {}
         self.dict_formula = {'R2': self.R2Formula, 'R3': self.R3Formula, 'R4': self.R4Formula, 'R5': self.R5Formula}
-
+        self.operator_map = {
+            'eq_to': '==', 
+            'not_eq': '!=', 
+            'gr_th': '>', 
+            'le_th': '<', 
+            'gr_eq': '>=', 
+            'le_eq': '<='
+        }
         # construct feature map between feature model and code implementation - need RTW nodes
         if feature_map is not None:
             if self.setupFeatureMap(feature_map) == False:
@@ -245,21 +251,30 @@ class RTW:
             if not entry.Valid:
                 continue
             if entry.Rule == 'R7':
-                self.sat_formula.append([Implies(Bool(entry.Parent), Bool(entry.Children[0])), [ID]])
+                parent_var = self.get_Z3_variable(entry.Parent)
+                child_var = self.get_Z3_variable(entry.Children[0])
+                self.sat_formula.append([Implies(parent_var, child_var), [ID]])
             elif entry.Rule == 'R8':
-                self.sat_formula.append([Implies(Bool(entry.Parent), Not(Bool(entry.Children[0]))), [ID]])
+                parent_var = self.get_Z3_variable(entry.Parent)
+                child_var = self.get_Z3_variable(entry.Children[0])
+                self.sat_formula.append([Implies(parent_var, Not(child_var)), [ID]])
             elif entry.Rule == 'R9':
                 children_logic = [] 
                 for child in entry.Children:
-                    children_logic.append(Bool(child))
+                    child_var = self.get_Z3_variable(child)
+                    children_logic.append(child_var)
                 children_logic = Or(children_logic)
-                self.sat_formula.append([Implies(Bool(entry.Parent), children_logic), [ID]])
+                parent_var = self.get_Z3_variable(entry.Parent)
+                self.sat_formula.append([Implies(parent_var, children_logic), [ID]])
             elif entry.Rule == 'R10':
                 # to-do: support multiple children
-                children_logic1 = And(Bool(entry.Children[0]), Not(Bool(entry.Children[1])))
-                children_logic2 = And(Not(Bool(entry.Children[0])), Bool(entry.Children[1]))
+                child1_var = self.get_Z3_variable(entry.Children[0])
+                child2_var = self.get_Z3_variable(entry.Children[1])
+                children_logic1 = And(child1_var, Not(child2_var))
+                children_logic2 = And(Not(child1_var), child2_var)
                 children_logic = Or(children_logic1, children_logic2)
-                self.sat_formula.append([Implies(Bool(entry.Parent), children_logic), [ID]])
+                parent_var = self.get_Z3_variable(entry.Parent)
+                self.sat_formula.append([Implies(parent_var, children_logic), [ID]])
    
     # extract features from RTW table, maintain in "self.features" dictionary
     # key of dictionary: feature (name)
@@ -273,7 +288,10 @@ class RTW:
             parent = entry.Parent.strip()
             if parent not in self.features:
                 self.features[parent] = RTW_Node(parent)
+
                 if len(self.code2feature_map) > 0 and parent not in self.code2feature_map:
+                    self.features[parent].abstract = True
+                elif 'abstract_' in parent:
                     self.features[parent].abstract = True    
             # add requirement ID to the node's requirement tracing list (variable tracedReq)
             if entry.ID not in self.features[parent].tracedReq:
@@ -283,7 +301,9 @@ class RTW:
                 if child not in self.features:
                     self.features[child] = RTW_Node(child)
                     if len(self.code2feature_map) > 0 and child not in self.code2feature_map:
-                        self.features[child].abstract = True      
+                        self.features[child].abstract = True  
+                    elif 'abstract_' in child:
+                        self.features[child].abstract = True       
                 if entry.ID not in self.features[child].tracedReq:
                     self.features[child].tracedReq.append(entry.ID)
 
@@ -488,7 +508,6 @@ class RTW:
     def constructFMSentences(self):
         self.sat_formula = []
         root = self.root.name
-        self.sentences.append(root + " = true")   
         self.sat_formula.append([Bool(root) == True, self.root.tracedReq]) 
         priorityQ = []
         priorityQ.append(self.root)
@@ -506,36 +525,64 @@ class RTW:
             # construct the formula for each individual parent-child based on its rule
             if rule != 'R6' and (not node.isLeaf()):
                 self.dict_formula[rule](node.name, children, node)
-        # add feature model's cross-tree constraints to sentences list
-        for ID in self.constraints:
-            constraint = self.constraints[ID]
-            self.sentences.append(constraint)  
+
         # add constraints to sat_formula
         self.constructSATConstraints()      
-        
-    # construct sentence using given terms and operator
-    # e.g. terms = FeatureA, FeatureB, ... and operator = &&
-    # sentence = (FeatureA && FeatureB && ...)
-    def constructSentence(self, terms, operator):
-        sentence = "("
-        for term in terms:
-            sentence = sentence + term + operator
-        sentence = sentence[:-4] + ")"
-        return sentence
     
+    def is_float(self, var):
+        try:
+            float(var)   # try to convert string to float
+            return True
+        except ValueError:
+            return False
+
+    def get_Z3_variable(self, var_name):
+        for op_key in self.operator_map:
+            if f"_{op_key}_" in var_name:
+                lhs, rhs = var_name.split(f"_{op_key}_", 1)
+                
+                # Decide if it's a string or numeric
+                if rhs.isdigit():  # simple integer check
+                    rhs_val = int(rhs)
+                    lhs_var = Int(lhs)
+                elif self.is_float(rhs):
+                    rhs_val = float(rhs)
+                    lhs_var = Real(lhs)
+                else:
+                    rhs_val = rhs
+                    lhs_var = String(lhs)
+                
+                # Build the Z3 formula
+                if op_key == 'eq_to':
+                    return lhs_var == (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
+                elif op_key == 'not_eq':
+                    return lhs_var != (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
+                elif op_key == 'gr_th':
+                    return lhs_var > rhs_val
+                elif op_key == 'le_th':
+                    return lhs_var < rhs_val
+                elif op_key == 'gr_eq':
+                    return lhs_var >= rhs_val
+                elif op_key == 'le_eq':
+                    return lhs_var <= rhs_val
+                else:
+                    raise ValueError(f"Unsupported operator {op_key}")
+        return Bool(var_name)
+
     # apply formula for R2 rule (mandatory child): parent <=> child
     # convert <=> to => for ACTS tool compatibility, i.e. parent => child, child => parent
     # convert to form comply with z3
     def R2Formula(self, parent, child, node):
-        self.sentences.append(parent + " => " + child[0])
-        self.sentences.append(child[0] + " => " + parent)
-        self.sat_formula.append([Implies(Bool(parent), Bool(child[0])), node.tracedReq])
-        self.sat_formula.append([Implies(Bool(child[0]), Bool(parent)), node.tracedReq])
+        parent_var = self.get_Z3_variable(parent)
+        child_var = self.get_Z3_variable(child[0])
+        self.sat_formula.append([Implies(parent_var, child_var), node.tracedReq])
+        self.sat_formula.append([Implies(child_var, parent_var), node.tracedReq])
 
     # apply formula for R3 rule (optional child): child => parent
     def R3Formula(self, parent, child, node):
-        self.sentences.append(child[0] + " => " + parent)
-        self.sat_formula.append([Implies(Bool(child[0]), Bool(parent)), node.tracedReq])
+        parent_var = self.get_Z3_variable(parent)
+        child_var = self.get_Z3_variable(child[0])
+        self.sat_formula.append([Implies(child_var, parent_var), node.tracedReq])
 
     # apply formula for R4 rule (select exactly only one child, i.e. xor): 
     # parent <=> (childA && !childB && ...) || (!childA && childB && ...)
@@ -544,44 +591,33 @@ class RTW:
     # (childA && !childB && ...) || (!childA && childB && ...) => parent
     # and to a form that is complied with z3 (in sat_formulat)
     def R4Formula(self, parent, children, node):
-        sentences = []
         sat_sentences = []
         n = len(children)
         for i in range(n):
-            terms = []
             sat_terms = []
             # R4 (xor): terms = childA or !childA, ...
             #           sentences = (childA && !childB && ...), (!childA && childB && ...)
             for j in range(n):
-                term = "!" + children[j]
-                sat_term = Not(Bool(children[j]))
+                child_var = self.get_Z3_variable(children[j])
+                sat_term = Not(child_var)
                 if i == j:
-                    term = children[j]
-                    sat_term = Bool(children[j])
-                terms.append(term)
+                    sat_term = child_var
                 sat_terms.append(sat_term)
              
-            # construct "AND" sentence
-            sentence = self.constructSentence(terms, " && ")
             sat_sentence = And(sat_terms)
-            sentences.append(sentence)
             sat_sentences.append(sat_sentence)
         
-        sentence = self.constructSentence(sentences, " || ") 
-        self.sentences.append(parent + " => " + sentence)
-        self.sentences.append(sentence + " => " + parent) 
-        self.sat_formula.append([Implies(Bool(parent), Or(sat_sentences)), node.tracedReq])
-        self.sat_formula.append([Implies(Or(sat_sentences), Bool(parent)), node.tracedReq])
+        parent_var = self.get_Z3_variable(parent)
+        self.sat_formula.append([Implies(parent_var, Or(sat_sentences)), node.tracedReq])
+        self.sat_formula.append([Implies(Or(sat_sentences), parent_var), node.tracedReq])
         
         # add additional constraint: !parent => !childA && !childB && ...
-        terms = []
         sat_terms = []
         for child in children:
-            terms.append("!" + child)
-            sat_terms.append(Not(Bool(child)))
-        sentence = self.constructSentence(terms, " && ")
-        self.sentences.append("!" + parent + " => " + sentence)
-        self.sat_formula.append([Implies(Not(Bool(parent)), And(sat_terms)), node.tracedReq])
+            child_var = self.get_Z3_variable(child)
+            sat_terms.append(Not(child_var))
+
+        self.sat_formula.append([Implies(Not(parent_var), And(sat_terms)), node.tracedReq])
       
     # apply formula for R5 rule (select at least one child, i.e. or): 
     # parent <=> (childA || childB || ...) 
@@ -590,312 +626,13 @@ class RTW:
     # (childA || childB ||..) => parent
     # and to a form that is complied with z3 (in sat_formulat)
     def R5Formula(self, parent, children, node):
-        # construct "OR" sentence
-        sentence = self.constructSentence(children, " || ") 
-        self.sentences.append(parent + " => " + sentence)
-        self.sentences.append(sentence + " => " + parent) 
         sat_children = []
         for child in children:
-            sat_children.append(Bool(child))
-        self.sat_formula.append([Implies(Bool(parent), Or(sat_children)), node.tracedReq])
-        self.sat_formula.append([Implies(Or(sat_children), Bool(parent)), node.tracedReq])
-
-    # generate input file for ACTS tool
-    # the input file consists of system name, boolean parameters and constraints
-    # boolean parameters and constraints are extracted from feature model
-    def generateACTSInputFile(self, filename):
-        with open(filename, 'w') as f:
-            f.write("[System]\n")
-            f.write("Name: {}\n\n".format(self.root.name))
-            f.write("[Parameter]\n")
-            for feature in self.features:
-                node = self.features[feature]
-                if node.valid:
-                    f.write(feature + " (boolean): true, false\n")
-            f.write("\n")
-            f.write("[Constraint]\n")
-            for s in self.sentences:
-                f.write(s + "\n")
-            f.write("\n")
-            f.close()
-
-    # generate configuration files based on ACTS output file
-    # ACTS tool is used to generate test sets for 1-way, 2-way, 3-way combinations of features
-    def generateCitCfgFiles(self, filename, component):
-        try:
-            with open(filename, 'r') as f:
-                lines = f.readlines()
-                f.close()
-        except FileNotFoundError:
-            print("File '{}' is not found".format(filename))
-            return
-        # current support cFS Time and axTLS build system
-        dict_createFileFunc = {'cfs': self.createCfsCfgFiles, 'axtls': self.createAxtlsCfgFiles}
-        if component not in dict_createFileFunc:
-            print("Invalid component {}".format(component))
-            return
-        # format of dict: cfg #: [start, end]
-        dict_cfg = {}
-        # clear the solutions
-        self.solutions = []
-        cfg_no = 0
-        # l is the line #
-        # find a block of feature lines for specific configuration
-        for l in range(len(lines)):
-            if "Configuration #" in lines[l]:
-                line = lines[l].strip().split()
-                cfg_no = int(line[1][1:-1])
-                dict_cfg[cfg_no] = [l, -1]
-            # ----...---- is the terminator of each configuration
-            elif "-------------------------------------" in lines[l]:
-                dict_cfg[cfg_no][1] = l
-        for cfg_no in dict_cfg:
-            start = dict_cfg[cfg_no][0]
-            end = dict_cfg[cfg_no][1]
-            self.constructCitCfgSolution(lines[start:end])    
-            dict_createFileFunc[component]()
-            
-    # decode configurations from ACTS output file
-    # each configuration is a solution that satisfies feature model
-    def constructCitCfgSolution(self, lines):
-        dict_solution = {}
-        for line in lines:
-            line = line.split()
-            # if len is 1 or less, not a valid entry
-            if len(line) <= 1:
-                continue
-            word = line[-1]
-            if "=true" in word:
-                word = word.replace("=true", "").strip()
-
-                feature_node = self.features[word]
-                if not feature_node.abstract:
-                    dict_solution[word] = "True"     
-                # if word in self.feature_map:
-                #     dict_solution[word] = "True"
-            elif "=false" in word:
-                word = word.replace("=false", "").strip()
-                
-                feature_node = self.features[word]
-                if not feature_node.abstract:
-                    dict_solution[word] = "False"
-                # if word in self.feature_map:
-                #     dict_solution[word] = "False"
-        self.solutions.append(dict_solution)
-            
-    # get the test result from file
-    def getTestResult(self, filename):
-        self.dict_result = {'passed': [], 'failed': []}
-        try:
-            with open(filename, 'r') as f:
-                for line in f:
-                    # file entry format: 
-                    #   Build cfg1 failed
-                    #   Build cfg6 passed
-                    # line[2] is either "failed" or "passed"
-                    # line[1] is cfgN where N is the cfg #
-                    line = line.split()
-                    cfg = line[1].replace("cfg", "")
-                    self.dict_result[line[2]].append(cfg)
-                f.close()
-        except FileNotFoundError:
-            print("File '{}' is not found".format(filename))
-            return False
-        self.showTestResult()
-        return True
-         
-    # check if number of tests matchs total configurations (represented by self.solutions)
-    # one test per configuration
-    def isCfgSetCompatible(self):
-        total_tests = len(self.dict_result['passed']) + len(self.dict_result['failed'])
-        if len(self.solutions) == total_tests:
-            return True
-        else:
-            return False
-    
-    # check if the nodes are parent-child relationship
-    def isParentChild(self, nodes):
-        for i in range(len(nodes)):
-            for j in range(len(nodes)):
-                if j == i:
-                    continue
-                for childnode in nodes[i].children:
-                    if nodes[j].name == childnode.name:
-                        return True
-                for childnode in nodes[j].children:
-                    if nodes[i].name == childnode.name:
-                        return True
-        return False
-    
-    # check if the nodes are alternative peer relationship 
-    def isAlternativeChildren(self, nodes):
-        for i in range(len(nodes)):
-            for j in range(len(nodes)):
-                if j == i:
-                    continue
-                parent1 = nodes[i].parent
-                parent2 = nodes[j].parent
-                if parent1 is not None and parent2 is not None:
-                    if (parent1.name == parent2.name) and (parent1.rule == 'R4') and (nodes[i].assignment != nodes[j].assignment): 
-                        return True
-        return False
-    
-    # analyze the relationship between the features in the interaction  
-    def analyzeInteraction(self, interactions):
-        dict_interactions = interactions.copy()
-        for interaction in interactions.copy():
-            features = interaction.split(" && ")
-            nodes_dict = {}
-            nodes_list = []
-            # format e.g.: featureA = True 
-            for feature in features:
-                word = feature.split()
-                # word[0] is feature
-                node = self.features[word[0]]
-                # word[2] is either "True" or "False"
-                node.assignment = word[2]
-                nodes_list.append(node) 
-                if word[2] in nodes_dict:
-                    nodes_dict[word[2]].append(node)
-                else:
-                    nodes_dict[word[2]] = [node]
-            if self.isParentChild(nodes_dict['True']) or self.isAlternativeChildren(nodes_list):
-                del dict_interactions[interaction]
-        return dict_interactions
-        
-    # analyze the test result to indetify failures triggered by single parameter or 2-way feature interaction 
-    def analyzeTestResult(self, filename):
-        if self.getTestResult(filename) == False:
-            print("\nAborted analysis")
-            return
-        # abort test analysis if total tests do not match total configurations (represented by self.solutions) 
-        if not self.isCfgSetCompatible():
-            total_tests = len(self.dict_result['passed']) + len(self.dict_result['failed'])
-            print("\nTotal tests ({}) do not match with total configurations ({}), aborted test analysis!".format(total_tests, len(self.solutions)))
-            return
-        # check if failures are due to single parameter configuration
-        dict_feature_fail = self.findFailuresBySingleParameter()
-        if len(dict_feature_fail) > 0:
-            print("\nFailure triggered by single parameter, potential candidates: ")
-            for key in dict_feature_fail:
-                print("  {}".format(key))
-                feature = key.split()[0]
-                node = self.features[feature]
-                print("       Requirements: {}".format(node.tracedReq))
-        else:
-            print("\nNo failure triggered by single parameter")
-        # check if failures are due to t-way feature interaction
-        for t in range(2, 4):
-            dict_interaction_fail = self.findFailuresByInteraction(t)
-            dict_interaction_fail = self.analyzeInteraction(dict_interaction_fail)
-            if len(dict_interaction_fail) > 0:
-                print("\nFailure triggered by {}-way feature interaction, potential candidates: \n".format(t))
-                for interaction in dict_interaction_fail:
-                    print("  {}".format(interaction))
-                    features = interaction.split(" && ")
-                    for feature in features:
-                        feature = feature.split()[0]
-                        node = self.features[feature]
-                        print("       Requirements for {}: {}".format(feature, node.tracedReq))
-            else:
-                print("\nNo failure triggered by {}-way feature interaction".format(t))
-
-    # find failures caused by single parameters, report all single parameters     
-    def findFailuresBySingleParameter(self):
-        dict_feature_fail = {}  
-        # get all assignments of single parameters in configurations that failed build test
-        # into a dictionary
-        for cfg_no in self.dict_result['failed']:
-            solution = self.solutions[int(cfg_no)-1]
-            for feature in solution:
-                key = feature + " = " + solution[feature]
-                dict_feature_fail[key] = 1
-        # remove those assignments in dictionary if the assignments appear in the configurations
-        # that passed build test
-        for cfg_no in self.dict_result['passed']:
-            solution = self.solutions[int(cfg_no)-1]
-            for feature in solution:
-                key = feature + " = " + solution[feature]
-                if key in dict_feature_fail:
-                     del dict_feature_fail[key]
-        # return the remaining parameters' assignments which are "potential candidates" for 
-        # single parameter's failure
-        return dict_feature_fail
-    
-    # find features which setting is same for all configurations
-    def findCommonParameters(self):
-        dict_common_features = {}  
-        total_cfg = len(self.solutions)
-        for solution in self.solutions:
-            for feature in solution:
-                key = feature + " = " + solution[feature]
-                if key in dict_common_features:
-                    dict_common_features[key] = dict_common_features[key] + 1
-                else:
-                    dict_common_features[key] = 1
-        for key in dict_common_features.copy():
-            if dict_common_features[key] != total_cfg:
-                del dict_common_features[key]
-        return dict_common_features
-
-    # construct an interaction formula: e.g. featureA = True && featureB = False && ...
-    def constructInteraction(self, comb):
-        interaction = ""
-        for feature in comb:
-            interaction = interaction + feature + " && " 
-        return interaction[:-4]      
-        
-    # find failures caused by t-way feature interactions     
-    def findFailuresByInteraction(self, ways):
-        # find feature interaction failures
-        dict_interaction_fail = {}
-        dict_common_features = self.findCommonParameters()
-        # get all t-way combinations of parameters' assignments from configurations that failed build test
-        # into a dictionary
-        for cfg_no in self.dict_result['failed']:
-            solution = self.solutions[int(cfg_no)-1]
-            assignments = []
-            # get all features setting in each configuration
-            for feature in solution:
-                assignment = feature + " = " + solution[feature]
-                assignments.append(assignment)
-            # get t-way combinations for features
-            comb = combinations(assignments, ways)
-            for feature in list(comb):
-                interaction = self.constructInteraction(feature)
-                if interaction in dict_interaction_fail:
-                    dict_interaction_fail[interaction] = dict_interaction_fail[interaction] + 1
-                else:
-                    dict_interaction_fail[interaction] = 1 
-        total_failed = len(self.dict_result['failed'])
-        total_cfg = total_failed + len(self.dict_result['passed'])
-        # keep only the feature settings that are same in all failed configurations 
-        for key in dict_interaction_fail.copy():
-            if dict_interaction_fail[key] != total_failed:
-                del dict_interaction_fail[key]
-        # remove common feature settings that are same for all configurations (both passed and failed)
-        for key in dict_common_features:
-            for interaction in dict_interaction_fail.copy():
-                if key in interaction:
-                    del dict_interaction_fail[interaction]
-        # remove those combinations' assignments in dictionary if the combinations appear in the configurations
-        # that passed build test
-        for cfg_no in self.dict_result['passed']:
-            solution = self.solutions[int(cfg_no)-1]
-            assignments = []
-            # get all features setting in each configuration
-            for feature in solution:
-                assignment = feature + " = " + solution[feature]
-                assignments.append(assignment)
-            # get t-way combinations for features
-            comb = combinations(assignments, ways)
-            for feature in list(comb):
-                interaction = self.constructInteraction(feature)
-                if interaction in dict_interaction_fail:
-                    del dict_interaction_fail[interaction]
-        # return the remaining parameters' assignments which are "potential candidates" for 
-        # t-way feature interaction failure
-        return dict_interaction_fail
+            child_var = self.get_Z3_variable(child)
+            sat_children.append(child_var)
+        parent_var = self.get_Z3_variable(parent)
+        self.sat_formula.append([Implies(parent_var, Or(sat_children)), node.tracedReq])
+        self.sat_formula.append([Implies(Or(sat_children), parent_var), node.tracedReq])
 
     def showRTWConstraints(self):
         print("Constraints:")
@@ -921,11 +658,6 @@ class RTW:
             if node.abstract:
                 node.printNode()
     
-    def showSentences(self):
-        print("\nSentences list: ")
-        for s in self.sentences:
-            print(s)
-        print()
 
     def showSATFormula(self):
         print("\nSAT Formula list: ")
@@ -998,32 +730,4 @@ class RTW:
             for req in req_not_covered:
                 print(f"   {req}: {self.table[req].Req}")
 
-    # --------------------------------------------------------------------------
-    # the following methods are specific and depending on system's build system
-    # --------------------------------------------------------------------------
-      
-    # create configuration files for cFS Time, compatible for cFS Time build system only
-    def createCfsCfgFiles(self):
-        for count in range(len(self.solutions)):
-            filename = "config/cfg" + str(count + 1)
-            with open(filename, 'w') as f:
-                solutions = self.solutions[count]
-                for feature in solutions:
-                    f.write(feature + " " + solutions[feature].lower() + '\n')
-                    # f.write(self.feature_map[feature] + " " + solutions[feature].lower() + '\n')
-                f.close()
- 
-    # create configuration files for axTLS, compatible for axTLS build system only
-    def createAxtlsCfgFiles(self):
-        for count in range(len(self.solutions)):
-            filename = "config/cfg" + str(count + 1)
-            with open(filename, 'w') as f:
-                solutions = self.solutions[count]
-                for feature in solutions:
-                    if solutions[feature] == "True":
-                        f.write(feature + "=y\n")
-                        # f.write(self.feature_map[feature] + "=y\n")
-                    else:
-                        f.write("# " + feature + " is not set\n")
-                        #f.write("# " + self.feature_map[feature] + " is not set\n")
-                f.close() 
+  
