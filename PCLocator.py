@@ -1,5 +1,81 @@
 import ast
 import sys
+import re
+
+class AdvancedSubstitution(ast.NodeTransformer):
+    def __init__(self, source):
+        self.source_lines = source.splitlines()
+        self.tree = ast.parse(source)
+        self.env = {}
+        self.func_params = {}
+        self.calls = []
+        
+    def _get_full_name(self, node):
+        """Recursively reconstruct names like cfg.camReboot"""
+        if isinstance(node, ast.Name):
+            return self.env.get(node.id, node.id)
+        if isinstance(node, ast.Attribute):
+            return f"{self._get_full_name(node.value)}.{node.attr}"
+        return None
+
+
+    def build_map(self):
+        for node in ast.walk(self.tree):
+            # 1. Map assignments: b = cfg.camReboot
+            if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+                val = self._get_full_name(node.value)
+                # ONLY map if we actually found a meaningful substitution string
+                if val and val != "None" and val != "":
+                    self.env[node.targets[0].id] = val
+            
+            # 2. Map function signatures
+            if isinstance(node, ast.FunctionDef):
+                self.func_params[node.name] = [arg.arg for arg in node.args.args]
+            
+            # 3. Collect calls to link parameters later
+            if isinstance(node, ast.Call):
+                self.calls.append(node)
+
+        # Link parameters: a -> cfg.camReboot
+        for call in self.calls:
+            if isinstance(call.func, ast.Name) and call.func.id in self.func_params:
+                for i, arg_node in enumerate(call.args):
+                    param_name = self.func_params[call.func.id][i]
+                    val = self._get_full_name(arg_node)
+                    if val: self.env[param_name] = val
+
+
+
+
+    def get_modified_code(self):
+        self.build_map()
+        modified_lines = []
+        sorted_vars = sorted(self.env.keys(), key=len, reverse=True)
+        
+        for line_text in self.source_lines:
+            # SKIP substitution if the line is a function definition header
+            if line_text.strip().startswith("def "):
+                modified_lines.append(line_text)
+                continue
+                
+            new_line = line_text
+
+            for var in sorted_vars:
+                # Use a negative lookbehind (?<!\.) to ensure the variable 
+                # isn't preceded by a dot (meaning it's an attribute, not a variable)
+                pattern = rf'(?<!\.)\b{var}\b'
+                
+                def replace_func(match):
+                    prefix = new_line[:match.start()]
+                    if prefix.count('"') % 2 != 0 or prefix.count("'") % 2 != 0:
+                        return match.group(0)
+                    return self.env[var]
+                
+                new_line = re.sub(pattern, replace_func, new_line)
+            modified_lines.append(new_line)
+            
+        return "\n".join(modified_lines)
+
 
 class PresenceConditionVisitor(ast.NodeVisitor):
     def __init__(self, supported_features, code):
@@ -48,6 +124,7 @@ class PresenceConditionVisitor(ast.NodeVisitor):
             if expr.attr in self.supported_features or (target_id and expr.attr == target_id):
                 return expr.attr
             val_str = self.expr_to_str(expr.value, target_id=target_id)
+            #return f"{val_str}.{expr.attr}" if val_str else ""
             return f"{val_str}.{expr.attr}" if val_str else ""
 
         if isinstance(expr, ast.Constant): return str(expr.value)
@@ -232,6 +309,32 @@ class PresenceConditionVisitor(ast.NodeVisitor):
             self.conditions[finally_keyword_line] = old_path
             for stmt in node.finalbody: self.visit(stmt)
 
+    def visit_IfExp(self, node):
+        cond_str = self.expr_to_str(node.test)
+        # Negate the condition for the else branch
+        negated_cond = f"!({cond_str})" if " " in cond_str else f"!{cond_str}" if cond_str else ""
+        
+        old_path = self.path_condition
+
+        # 1. Handle the "True" branch (body)
+        # This is the value BEFORE the 'if'
+        t_start = node.body.lineno
+        t_end = getattr(node.body, "end_lineno", t_start)
+        true_path = self.combine_logic(old_path, cond_str)
+        for line in range(t_start, t_end + 1):
+            self.conditions[line] = true_path
+
+        # 2. Handle the "False" branch (orelse)
+        # This is the value AFTER the 'else'
+        f_start = node.orelse.lineno
+        f_end = getattr(node.orelse, "end_lineno", f_start)
+        false_path = self.combine_logic(old_path, negated_cond)
+        for line in range(f_start, f_end + 1):
+            self.conditions[line] = false_path
+            
+        # We do NOT visit children normally here because we've manually 
+        # handled the line mapping for the sub-expressions.
+
     # Standard visitors
     def visit_FunctionDef(self, node): self.record(node); self.generic_visit(node)
     def visit_ClassDef(self, node): self.record(node); self.generic_visit(node)
@@ -241,29 +344,36 @@ class PresenceConditionVisitor(ast.NodeVisitor):
     def visit_AugAssign(self, node): self.record(node)
 
 
-def extract_presence_conditions(code, supported_features, file):
-    tree = ast.parse(code)
-    visitor = PresenceConditionVisitor(supported_features, code)
+def extract_presence_conditions(code, supported_features, output_file):
+    # --- FIRST PASS: Substitution ---
+    sub_engine = AdvancedSubstitution(code)
+    substituted_code = sub_engine.get_modified_code()
+    
+    # --- SECOND PASS: Logic Analysis ---
+    # We parse the SUBSTITUTED code so the AST contains the resolved names
+    tree = ast.parse(substituted_code)
+    
+    # We pass the substituted code strings to the visitor so line indexing matches
+    visitor = PresenceConditionVisitor(supported_features, substituted_code)
     visitor.visit(tree)
 
-    # NEW: Get total line count and fill the gaps (comments/blanks)
-    lines = code.splitlines()
-    total_lines = len(lines)
+    # Finalize and write to file
+    total_lines = len(substituted_code.splitlines())
     visitor.finalize(total_lines)
 
-    # # Now we iterate through the filled dictionary
-    # for i in range(1, total_lines + 1):
-    #     # We can now safely use the dictionary because finalize filled every key
-    #     # print(f"Line {i}: {visitor.conditions[i]}")
-    #     print(f"{visitor.conditions[i]}")
-
-    with open(file, "w") as f:
+    with open(output_file, "w") as f:
         # Now we iterate through the filled dictionary
         for i in range(1, total_lines + 1):
             # We can now safely use the dictionary because finalize filled every key
             # print(f"Line {i}: {visitor.conditions[i]}")
             print(f"{visitor.conditions[i]}", file=f)
-            
+
+#     # Now we iterate through the filled dictionary
+#     for i in range(1, total_lines + 1):
+#         # We can now safely use the dictionary because finalize filled every key
+#         # print(f"Line {i}: {visitor.conditions[i]}")
+#         print(f"{visitor.conditions[i]}")
+
 
 # if __name__ == "__main__":
 #     if len(sys.argv) > 1:

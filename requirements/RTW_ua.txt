@@ -78,3 +78,18 @@ Child --> cfg.undistort
 Req --> 
 Source --> 
 
+ID --> UA-3
+Valid --> 1
+Rule --> R3
+Parent --> UA_app
+Child --> cfg.ua
+Req --> 
+Source --> 
+
+ID --> UA-4
+Valid --> 1
+Rule --> R3
+Parent --> UA_app
+Child --> cfg.full_frame
+Req --> 
+Source --> 

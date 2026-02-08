@@ -7,3 +7,5 @@ cfg.camStream camStream
 cfg.camReboot camReboot
 cfg.camStatus camStatus
 cfg.camSetting camSetting
+cfg.ua ua
+cfg.full_frame full_frame
