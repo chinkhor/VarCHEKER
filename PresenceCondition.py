@@ -161,7 +161,7 @@ class PresenceCondition:
             # get the pc in this file
             if new_line not in pc:
                 pc.append(new_line)
-            
+
             # extract literals (features) from presence conditions
             features = self.extract_features(new_line)
             # create feature dictionary where key is feature, value if list of files
@@ -196,23 +196,19 @@ class PresenceCondition:
         
     def findPresenceConditions(self):
         for filename in self.src_list:
-            # skip header files
-            if ".h" in filename:
-                continue
             pcs = self.parsePC(filename)
-            comparators = ['==', '>', '<', '%', '>=', '<=', '!=', '%=']
-            pc_copy = pcs.copy()
-            for pc in pc_copy:
-                for com in comparators:
-                    if com in pc:
-                        #print(f"Discard PC: {pc}")
-                        pcs.remove(pc)
-                        del self.presence_condition_dict[pc]
-                        break
+            # comparators = ['==', '>', '<', '%', '>=', '<=', '!=', '%=']
+            # pc_copy = pcs.copy()
+            # for pc in pc_copy:
+            #     for com in comparators:
+            #         if com in pc:
+            #             #print(f"Discard PC: {pc}")
+            #             pcs.remove(pc)
+            #             del self.presence_condition_dict[pc]
+            #             break
             self.var_file_pc[filename] = pcs
         self.sortPresenceConditions()
 
-       
     def sortPresenceConditions(self):
         x = self.presence_condition_dict
         self.presence_condition_dict = dict(sorted(x.items(), key=lambda x: len(x[1]), reverse=True))

@@ -153,12 +153,20 @@ class PresenceConditionVisitor(ast.NodeVisitor):
             return f"!({operand})" if " " in operand else f"!{operand}"
 
         # 3. Comparisons (Parens usually safer but optional if simple)
+
         if isinstance(expr, ast.Compare):
             left = self.expr_to_str(expr.left)
-            ops = {ast.Eq: "==", ast.NotEq: "!=", ast.Lt: "<", ast.Gt: ">"}
+            ops = {
+                ast.Eq: "==", 
+                ast.NotEq: "!=", 
+                ast.Lt: "<", 
+                ast.Gt: ">",
+                ast.LtE: "<=",  # Added Less Than or Equal
+                ast.GtE: ">="   # Added Greater Than or Equal
+            }
             op_sym = ops.get(type(expr.ops[0]), "?")
             right = self.expr_to_str(expr.comparators[0])
-            return f"{left} {op_sym} {right}" if left and right else ""
+            return f"({left} {op_sym} {right})" if left and right else ""
 
         if isinstance(expr, ast.Call):
             if isinstance(expr.func, ast.Name):

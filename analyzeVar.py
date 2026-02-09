@@ -8,7 +8,20 @@ from PresenceCondition import getFileLines
 import subprocess
 import re
 
+
+def get_feature(var_name, operator_map):
+    # filter operator (if any) from var_name 
+    for op_key in operator_map:
+        if f"_{op_key}_" in var_name:
+            lhs, rhs = var_name.split(f"_{op_key}_", 1)
+            return lhs
+    # filter out abstract feature, i.e. with abstract prefix
+    if "abstract" in var_name:
+        return ""
+    return var_name
+
 def main(rtwFile, mapFile, path, file, filter, project):
+    operator_map = ['eq_to', 'not_eq', 'gr_th', 'le_th', 'gr_eq', 'le_eq']
     pc = PresenceCondition(path, file, filter)
     start = time.time()
     cur_time = time.time()
@@ -19,7 +32,9 @@ def main(rtwFile, mapFile, path, file, filter, project):
             for line in lines:
                 items = line.split()
                 if len(items) == 2:
-                    supported_features.append(items[1].strip())
+                    feature = get_feature(items[1].strip(), operator_map)
+                    if feature != "" and feature not in supported_features:
+                        supported_features.append(feature)
     print(f"supported_features: {supported_features}")
     print(f"Variability source code:")
     pc.src_list = getFileLines(pc.src_list_file)
@@ -38,11 +53,14 @@ def main(rtwFile, mapFile, path, file, filter, project):
     rtw = RTW(rtwFile, mapFile)
     print(f"Total time for feature model generation: {(time.time() - cur_time):.2f} seconds")
     cur_time = time.time()
+    #rtw.showSATFormula()
     print("\nAnalyzing presence conditions. Please wait...")
     pc.findPresenceConditions()
     pc.reverseFeatureMap(rtw.code2feature_map)
-    pc.discardNumericals()
+    pc.showFeatureModelMap()
+    #pc.discardNumericals()
     pc.showPresenceConditionsStat()
+    exit()
     pc.getAssignments()
     #pc.showAssignmentsWeight()
     pc.findFeaturesNotInFeatureModel()
