@@ -75,6 +75,8 @@ class SATSolver:
                 req_id = self.verify_req_id(req_id, pc)
                 stat.inconsistencies.append(["   Conflicted Requirement ID:", req_id])
                 stat.inconsistencies.append(["   Conflicted Requirement Sentence:", sentence])
+            if "Dead Code" in i_dict["Requirement Sentence"]:
+                stat.inconsistencies.append(["   Dead Code"])
         print()
         for item in stat.inconsistencies:
             print(item)
@@ -151,12 +153,13 @@ class SATSolver:
             sentence_check_list = []
             pc = unsat[1]
             key = str(pc)
-            #print(f"\nPresence Condition: {assignment2presence_cond[key]} is conflicted with")
             features = []
             self.solver = Solver()
             for assignments in pc:
-                terms = str(assignments).split(' == ')
-                features.append(terms[0].strip())
+                feature, val = str(assignments).split(' == ')
+                feature = feature.strip()
+                if feature not in features:
+                    features.append(feature)
 
             for item in self.feature_model:
                 sentence = item[0]
@@ -168,11 +171,16 @@ class SATSolver:
                         break
                 if not match:
                     self.solver.add(sentence)
-            
+
+            # sanity test
+            if self.runModelCheck() != sat:
+                raise Exception(f"Unsat error")
+
             for assignments in pc:
                 self.solver.add(assignments)
 
             if self.runModelCheck() == sat:
+                print(f"\nPresence Condition: {assignment2presence_cond[key]} is conflicted with")
                 if len(sentence_check_list) > 0:
                     inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"] = []
                     inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"] = []
@@ -189,6 +197,10 @@ class SATSolver:
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"].append(item[1])
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"].append(sentence)
                         #break
+            else:
+                print(f"\nPresence Condition: {assignment2presence_cond[key]} is Dead Code")
+                inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"] = []
+                inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"] = ["Dead Code"]
 
     def findMinConfigSet(self):
         # create check list and check all items with 'O'

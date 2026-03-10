@@ -4,6 +4,7 @@ import subprocess
 import os
 import re
 import csv
+from sympy.parsing.sympy_parser import parse_expr
 
 def getFileLines(filename):
     try:
@@ -289,59 +290,75 @@ class PresenceCondition:
 
     def convert2DNF(self, pc):
         feature_list = {}
-        modified_pc = pc
-        filters = ['==1', '~=0', ' & ~0', '~0 & ', ' & 1', '1 & ', '0 | ', ' | 0', '~1 | ', ' | ~1', ' & ~(0)', ' & (1)', '(1) & ', '~(0) & ', '(0) | ', ' | (0)', '~(1) | ', ' | ~(1)']
-        for filter in filters:
-            modified_pc = modified_pc.replace(filter, '')
+        # print(f"pc: {pc}")
+        formula = parse_expr(pc, evaluate=False)
+        # print(f"formula: {formula}")
+        dnf_formula = to_dnf(formula, simplify=True)
+        # symbols = {str(s) for s in dnf_formula.atoms()}
+        # for symbol in symbols:
+        #     if symbol not in feature_list:
+        #         feature_list[symbol] = Symbol(symbol)
+        # print(f"symbols: {feature_list}")
+        
+        # print(f"dnf: {dnf_formula}")
+        return dnf_formula
 
-        sentence = modified_pc
-        matches = ['(', ')', '&', '|']
-        for c in matches:
-            sentence = sentence.replace(c, '')
-        terms = sentence.split()
-        for i, term in enumerate(terms):
-            if '==0' in term:
-                terms[i] = terms[i].replace('==0', '')
-                modified_pc = modified_pc.replace('==0', '')
-                modified_pc = modified_pc.replace(terms[i], '~' + terms[i])
-            if '~=1' in term:
-                terms[i] = terms[i].replace('~=1', '')
-                modified_pc = modified_pc.replace('~=1', '')
-                modified_pc = modified_pc.replace(terms[i], '~' + terms[i])
-  
-        for term in terms:
-            if '~' in term:
-                term = term.replace('~', '')
-            feature = term
-            if feature not in feature_list:
-                feature_list[feature] = (Symbol(feature.strip()))
-
-        if (" & ~1" in modified_pc) or ("~1 & " in modified_pc) or (modified_pc == '?') or (modified_pc == '') or (modified_pc == ' '):
-            return None, None
+    def is_float(self, var):
         try:
-            formula = sympify(modified_pc, locals=feature_list)
-        except:
-            print(f"Sympify Error: pc: {modified_pc}")
-            return None, None
-        var_count = self.get_variable_count(formula)
-        if var_count < 8:
-            dnf = to_dnf(formula, simplify=True, force=True)
-            return dnf, feature_list
+            float(var)   # try to convert string to float
+            return True
+        except ValueError:
+            return False
+
+    def _get_lhs_rhs(self, expr_string):
+        expr = expr_string
+        expr = expr.replace("(", "")
+        expr = expr.replace(")", "")
+        lhs, rhs = expr.split(',')
+        lhs = lhs.strip()
+        rhs = rhs.strip()
+
+        # Decide if it's a string or numeric
+        if rhs.isdigit():  # simple integer check
+            rhs_val = int(rhs)
+            lhs_var = Int(lhs)
+        elif self.is_float(rhs):
+            rhs_val = float(rhs)
+            lhs_var = Real(lhs)
         else:
-            print(f"Warning: More than 8 variables in DNF, formula: {formula}, skipped")
-            return None, None     
+            rhs_val = rhs
+            lhs_var = String(lhs)
+
+        rhs_val = (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)    
+        return lhs_var, rhs_val      
+
+    def get_z3_formula(self, formula):
+        if 'Eq' in formula:
+            expr = str(formula).replace("Eq", "")
+            lhs_var, rhs_val = self._get_lhs_rhs(expr)
+            return lhs_var == rhs_val
+        elif 'Ne' in formula:
+            expr = str(formula).replace("Ne", "")
+            lhs_var, rhs_val = self._get_lhs_rhs(expr)
+            return lhs_var != rhs_val
+        raise Exception("Unsupported formula")
+
 
     def _getAssignments(self, sentence):
         assignment = []
         s = sentence
-        s = s.replace('(','')
-        s = s.replace(')','')
         terms = s.split(' & ')
         for term in terms:
-            if '~' in term:
-                assignment.append(Bool(term.replace('~', '').strip()) == False)
+            if 'Eq' in term or 'Ne' in term:
+                z3_formula = self.get_z3_formula(term)
+                assignment.append(z3_formula)
             else:
-                assignment.append(Bool(term.strip()) == True)
+                term = term.replace('(','')
+                term = term.replace(')','')
+                if '~' in term:
+                    assignment.append(Bool(term.replace('~', '').strip()) == False)
+                else:
+                    assignment.append(Bool(term.strip()) == True)
         return assignment
 
     def getAssignments(self):       
@@ -351,23 +368,31 @@ class PresenceCondition:
         assignments_dict = {}
         for ori_pc in self.presence_condition_dict:
             pc = ori_pc
+            # print(f"pc: {pc}")
             source_lines = self.presence_condition_dict[pc]
             lines = len(source_lines) 
             pc = pc.replace("&&", " & ")
             pc = pc.replace("||", " | ")
+            pc = pc.replace("!=", "_NOT_EQUAL_")
             pc = pc.replace("!", "~")
-            dnf, feature_list = self.convert2DNF(pc)
-            if dnf is None or dnf == -1:
-                continue
-            else:
-                features = []
-                for feature in feature_list:
-                    features.append(feature)
-                self.pc_features[ori_pc] = features
+            pc = pc.replace("_NOT_EQUAL_", "!=")
+            dnf = self.convert2DNF(pc)
+            # dnf, feature_list = self.convert2DNF(pc)
+            # if dnf is None or dnf == -1:
+            #     continue
+            # else:
+            #     features = []
+            #     for feature in feature_list:
+            #         features.append(feature)
+            #     self.pc_features[ori_pc] = features
             sentences = str(dnf).split(' | ')
+            # print(f"sentences: {sentences}")
             for sentence in sentences:
+                # print(f"sentence: {sentence}")
                 assignment = self._getAssignments(sentence.strip())
+                # print(f"assignment: {assignment}")
                 key = str(assignment)
+                # print(f"key: {key}")
                 if key not in assignments_dict:
                     assignments_dict[key] = [assignment, lines, source_lines]
                     self.assignment2presence_cond[key] = ori_pc

@@ -52,6 +52,7 @@ class RTW_Node:
         # assignment for the feature: True or False
         self.assignment = ""
         
+        
     # the feature is a terminal node, no child
     def isLeaf(self):
         if len(self.children) > 0:
@@ -94,6 +95,7 @@ class RTW:
             'gr_eq': '>=', 
             'le_eq': '<='
         }
+
         # construct feature map between feature model and code implementation - need RTW nodes
         if feature_map is not None:
             if self.setupFeatureMap(feature_map) == False:
@@ -324,7 +326,19 @@ class RTW:
                         line[0] = line[0].strip()
                         line[1] = line[1].strip()
                         self.feature2code_map[line[0]] = line[1]
-                        self.code2feature_map[line[1]] = line[0]
+                        if "abstract_" in line[1] and "_choice" in line[1]:
+                            code_var = line[0]
+                            feature = line[1]
+                            code_var = code_var.replace("abstract_", "")
+                            code_var = code_var.replace("_choice", "")  
+                            feature = feature.replace("abstract_", "")
+                            feature = feature.replace("_choice", "")  
+                            self.code2feature_map[feature] = code_var   
+                        # if "_eq_to_" in line[0]:
+                        #     code_var, _ = line[0].split("_eq_to_")
+                        #     self.code2feature_map[line[1]] = code_var
+                        else:
+                            self.code2feature_map[line[1]] = line[0]
                     f.close()
             except FileNotFoundError:
                 print("File '{}' is not found".format(filename))
@@ -612,12 +626,13 @@ class RTW:
         self.sat_formula.append([Implies(Or(sat_sentences), parent_var), node.tracedReq])
         
         # add additional constraint: !parent => !childA && !childB && ...
-        sat_terms = []
-        for child in children:
-            child_var = self.get_Z3_variable(child)
-            sat_terms.append(Not(child_var))
+        # sat_terms = []
+        # for child in children:
+        #     child_var = self.get_Z3_variable(child)
+        #     sat_terms.append(Not(child_var))
 
-        self.sat_formula.append([Implies(Not(parent_var), And(sat_terms)), node.tracedReq])
+        # self.sat_formula.append([Implies(Not(parent_var), And(sat_terms)), node.tracedReq])
+  
       
     # apply formula for R5 rule (select at least one child, i.e. or): 
     # parent <=> (childA || childB || ...) 

@@ -58,11 +58,13 @@ def main(rtwFile, mapFile, path, file, filter, project):
     pc.findPresenceConditions()
     pc.reverseFeatureMap(rtw.code2feature_map)
     pc.showFeatureModelMap()
+    rtw.showFeatureMap()
     #pc.discardNumericals()
     pc.showPresenceConditionsStat()
-    exit()
+    
     pc.getAssignments()
-    #pc.showAssignmentsWeight()
+    pc.showAssignmentsWeight()
+ 
     pc.findFeaturesNotInFeatureModel()
     pc.findFeaturesInFeatureModel()
     print("Removing files: ")
@@ -72,12 +74,14 @@ def main(rtwFile, mapFile, path, file, filter, project):
     #     rm_file = file.strip().replace(ext, f"{ext}.txt")
     #     print(f"   {rm_file}")
     #     command = f"rm {rm_file}"
-    #         os.system(command)        
+    #         os.system(command)  
+         
     cur_time = time.time()
     sat_solver = SATSolver(rtw, pc, project=project)
     sat_solver.evalPresenceCondition(pc.assignment_list_weight, pc.assignment2presence_cond)
     pc_identify_analysis_time = round(time.time() - cur_time, 2)
     print(f"Total time for presence condition identification and analysis: {pc_identify_analysis_time} seconds")
+    
     sat_solver.getMinConfigSet()
     rtw.showFeaturesNotInCode(sat_solver.feature_not_in_code, pc.stat)
     print("\nFinding min configuration sets. Please wait...")
