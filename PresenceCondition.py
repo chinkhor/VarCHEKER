@@ -5,6 +5,7 @@ import os
 import re
 import csv
 from sympy.parsing.sympy_parser import parse_expr
+from sympy.logic.boolalg import simplify_logic
 
 def getFileLines(filename):
     try:
@@ -147,10 +148,33 @@ class PresenceCondition:
                 
         return identifiers
 
+    def find_words_with_substring(self, text, substring):
+        words = re.findall(r'\b\w+\b', text)
+        return [w for w in words if substring.lower() in w.lower()]
+
+    def pre_process(self, line):
+        new_line = line.strip()
+        new_line = new_line.replace("!1", "1")
+        while "1 && 1" in new_line:
+            new_line = new_line.replace("1 && 1", "1", 1)
+        new_line = new_line.replace("1 &&", "")
+        new_line = new_line.replace("&& 1", "")
+
+        # filter Exception
+        tmp_line = new_line
+        literals = self.find_words_with_substring(tmp_line, "Exception")
+        filters = ["(", ")", "!", "&", "|"] + literals
+        for filter in filters:
+            tmp_line = tmp_line.replace(filter, "")
+        if tmp_line.strip() == "":
+            return "1"
+        else:
+            return new_line.strip()
+
     def parsePC_Python(self, lines, filename):
         pc = []
         for count, line in enumerate(lines):
-            new_line = line.strip()
+            new_line = self.pre_process(line)
             if new_line == '1':
                 continue
             if new_line in self.presence_condition_dict:
@@ -293,7 +317,9 @@ class PresenceCondition:
         # print(f"pc: {pc}")
         formula = parse_expr(pc, evaluate=False)
         # print(f"formula: {formula}")
-        dnf_formula = to_dnf(formula, simplify=True)
+        dnf_formula = to_dnf(formula, simplify=False)
+        dnf_min = simplify_logic(dnf_formula, form='dnf', force=True)
+
         # symbols = {str(s) for s in dnf_formula.atoms()}
         # for symbol in symbols:
         #     if symbol not in feature_list:
@@ -301,7 +327,7 @@ class PresenceCondition:
         # print(f"symbols: {feature_list}")
         
         # print(f"dnf: {dnf_formula}")
-        return dnf_formula
+        return dnf_min
 
     def is_float(self, var):
         try:
