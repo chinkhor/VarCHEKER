@@ -45,9 +45,7 @@ class AdvancedSubstitution(ast.NodeTransformer):
                     if val: self.env[param_name] = val
 
 
-
-
-    def get_modified_code(self):
+    def get_modified_code1(self):
         self.build_map()
         modified_lines = []
         sorted_vars = sorted(self.env.keys(), key=len, reverse=True)
@@ -76,6 +74,47 @@ class AdvancedSubstitution(ast.NodeTransformer):
             
         return "\n".join(modified_lines)
 
+
+    def get_modified_code(self):
+        self.build_map()
+        modified_lines = []
+        
+        # Replace longer names first to avoid partial replacement
+        sorted_vars = sorted(self.env.keys(), key=len, reverse=True)
+
+        for line_text in self.source_lines:
+            stripped = line_text.strip()
+
+            # Skip unsafe lines (critical fix)
+            if stripped.startswith(("def ", "nonlocal ", "global ", "class ")):
+                modified_lines.append(line_text)
+                continue
+
+            new_line = line_text
+
+            for var in sorted_vars:
+                # Safer boundary: avoid attributes and partial matches
+                pattern = rf'(?<![\.\w]){re.escape(var)}(?![\w])'
+
+                def replace_func(match):
+                    start = match.start()
+
+                    # Avoid replacing inside quotes (basic safeguard)
+                    prefix = new_line[:start]
+                    if (
+                        prefix.count('"') % 2 != 0 or
+                        prefix.count("'") % 2 != 0
+                    ):
+                        return match.group(0)
+
+                    return self.env[var]
+
+                new_line = re.sub(pattern, replace_func, new_line)
+
+            modified_lines.append(new_line)
+
+        return "\n".join(modified_lines)
+        
 
 class PresenceConditionVisitor(ast.NodeVisitor):
     def __init__(self, supported_features, code):

@@ -173,3 +173,115 @@ Parent --> abstract_duration_choice
 Child --> cfg.duration_eq_to_0
 Req --> 
 Source --> 
+
+ID --> UA-6
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.display
+Req --> 
+Source --> 
+
+ID --> UA-7
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.record
+Req --> 
+Source --> 
+
+ID --> UA-8
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.overlay
+Req --> 
+Source --> 
+
+ID --> UA-9
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.validate
+Req --> 
+Source --> 
+
+ID --> UA-9.1
+Valid --> 1
+Rule --> R8
+Parent --> cfg.validate
+Child --> cfg.live
+Req --> 
+Source --> 
+
+ID --> UA-10
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.april_tag_finder
+Req --> 
+Source --> 
+
+ID --> UA-10.1
+Valid --> 1
+Rule --> R7
+Parent --> cfg.april_tag_finder
+Child --> cfg.live
+Req --> 
+Source --> 
+
+ID --> UA-11
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.rtsp
+Req --> 
+Source --> 
+
+ID --> UA-12
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.redis
+Req --> 
+Source --> 
+
+ID --> UA-13
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> cfg.metrics_collector
+Req --> 
+Source --> 
+
+ID --> UA-14
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> inference_group_config.inference
+Req --> 
+Source --> 
+
+ID --> UA-14.1
+Valid --> 1
+Rule --> R3
+Parent --> inference_group_config.inference
+Child --> inference_group_config.inference_triton
+Req --> 
+Source --> 
+
+ID --> UA-15
+Valid --> 1
+Rule --> R3
+Parent --> UA_App
+Child --> profiler_group_config.profiler
+Req --> 
+Source --> 
+
+ID --> UA-15.1
+Valid --> 1
+Rule --> R3
+Parent --> profiler_group_config.profiler
+Child --> profiler_group_config.profiler_save_result
+Req --> 
+Source --> 

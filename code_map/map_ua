@@ -23,3 +23,15 @@ cfg.accuracy accuracy
 cfg.remote_calibrations remote_calibrations
 abstract_duration_choice abstract_duration_choice
 cfg.duration_eq_to_0 duration_eq_to_0
+cfg.display display
+cfg.record record
+cfg.validate validate
+cfg.rtsp rtsp
+cfg.april_tag_finder april_tag_finder
+cfg.overlay overlay
+cfg.metrics_collector metrics_collector
+cfg.redis redis
+inference_group_config.inference inference
+inference_group_config.inference_triton inference_triton
+profiler_group_config.profiler profiler
+profiler_group_config.profiler_save_result profiler_save_result

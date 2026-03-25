@@ -174,7 +174,8 @@ class PresenceCondition:
     def parsePC_Python(self, lines, filename):
         pc = []
         for count, line in enumerate(lines):
-            new_line = self.pre_process(line)
+            new_line = line.replace("!!", "")
+            new_line = self.pre_process(new_line)
             if new_line == '1':
                 continue
             if new_line in self.presence_condition_dict:
