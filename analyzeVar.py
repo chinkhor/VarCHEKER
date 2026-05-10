@@ -51,6 +51,7 @@ def main(rtwFile, mapFile, path, file, filter, project):
     cur_time = time.time()
     print("\nGenerating feature model. Please wait...")
     rtw = RTW(rtwFile, mapFile)
+    #rtw.showRTWTable()
     print(f"Total time for feature model generation: {(time.time() - cur_time):.2f} seconds")
     cur_time = time.time()
     #rtw.showSATFormula()

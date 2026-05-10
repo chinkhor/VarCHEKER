@@ -23,15 +23,11 @@ class RTW_Entry:
         self.Parent = ""
         # children features, for R7, R8, R9, R10, it/they represents second feature or subsequent features
         self.Children = []
-        # requirement specification
-        self.Req = ""
-        # source of requirement for traceability
-        self.Source = ""
+        # Entry attribute type: Bool, Str, Int or Float
+        self.Type = ""
         
     def printEntry(self):
-        print("ID : {}, Valid : {}, Rule : {}, Parent : {}, Children : {}".format(self.ID, self.Valid, self.Rule, self.Parent, self.Children))
-        print("Req: {}".format(self.Req))
-        print("Source: {}".format(self.Source))
+        print("ID : {}, Valid : {}, Rule : {}, Parent : {}, Children : {}, Type: {}".format(self.ID, self.Valid, self.Rule, self.Parent, self.Children, self.Type))
         print()
         
 # RTW node is a feature (unit of functionality) 
@@ -51,6 +47,7 @@ class RTW_Node:
         self.tracedReq = []
         # assignment for the feature: True or False
         self.assignment = ""
+        self.type = None
         
         
     # the feature is a terminal node, no child
@@ -61,7 +58,7 @@ class RTW_Node:
             return True
         
     def printNode(self):
-        print("Node: {}, valid {}, Abstract: {}, Rule: {}, private: {}".format(self.name, self.valid, self.abstract, self.rule, self.private))
+        print("Node: {}, valid {}, Abstract: {}, Rule: {}, Type: {}, private: {}".format(self.name, self.valid, self.abstract, self.rule, self.type, self.private))
         if self.parent != None:
             print("   Parent: {}".format(self.parent.name))
         else:
@@ -137,8 +134,7 @@ class RTW:
             lines[index+2].strip().startswith('Rule') and
             lines[index+3].strip().startswith('Parent') and
             lines[index+4].strip().startswith('Child') and
-            lines[index+5].strip().startswith('Req') and
-            lines[index+6].strip().startswith('Source')):
+            lines[index+5].strip().startswith('Type')):
             return True
         else:
             return False
@@ -175,8 +171,7 @@ class RTW:
                 else:
                     children.append(child)
             entry.Children = children
-        entry.Req = self.parseRTWEntry(lines[index+5], False)
-        entry.Source = self.parseRTWEntry(lines[index+6], False)
+        entry.Type = self.parseRTWEntry(lines[index+5], False)
         if entry.Valid == 1:
             if entry.ID not in self.table:
                 self.table[entry.ID] = entry
@@ -207,10 +202,8 @@ class RTW:
         with open(filename, 'w') as f:
             for ID in self.table:
                 entry = self.table[ID]
-                if entry.Rule == 'R1':
-                    f.write("\"# " + entry.Req.replace('"','') + "\"\n")
             f.write("\n")
-            f.write("Requirement ID,Requirement Specification,Rule,Parent Feature,Children Features,Source of Requirement\n")
+            f.write("Requirement ID,Rule,Parent Feature,Children Features,Attribute Type\n")
             for ID in self.table:
                 entry = self.table[ID]
                 if entry.Valid and (entry.Rule != 'R1'):
@@ -218,7 +211,7 @@ class RTW:
                     for child in entry.Children:
                         children_str = children_str + child + ", "
                     children_str = children_str[:-2]
-                    f.write("\"" + entry.ID + "\",\"" + entry.Req.replace('"','') + "\",\"" + entry.Rule + "\",\"" + entry.Parent + "\",\"" + children_str + "\",\"" + entry.Source + "\"\n")
+                    f.write("\"" + entry.ID + "\",\"" + entry.Rule + "\",\"" + entry.Parent + "\",\"" + children_str + "\",\"" + entry.Type + "\"\n")
             f.close()
             
     # extract cross-tree constraints from RTW table, maintain in "self.constraints" dictionary
