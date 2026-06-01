@@ -77,7 +77,7 @@ class SATSolver:
                 stat.inconsistencies.append(["   Conflicted Requirement ID:", req_id])
                 stat.inconsistencies.append(["   Conflicted Requirement Sentence:", sentence])
             if "Dead Code" in i_dict["Requirement Sentence"]:
-                stat.inconsistencies.append(["   Dead Code"])
+                stat.inconsistencies.append(["   Cause:", "Dead Code"])
         print()
         for item in stat.inconsistencies:
             print(item)
