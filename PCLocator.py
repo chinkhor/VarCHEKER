@@ -2,125 +2,11 @@ import ast
 import sys
 import re
 
-class AdvancedSubstitution(ast.NodeTransformer):
-    def __init__(self, source):
-        self.source_lines = source.splitlines()
-        self.tree = ast.parse(source)
-        self.env = {}
-        self.func_params = {}
-        self.calls = []
-        
-    def _get_full_name(self, node):
-        """Recursively reconstruct names like cfg.camReboot"""
-        if isinstance(node, ast.Name):
-            return self.env.get(node.id, node.id)
-        if isinstance(node, ast.Attribute):
-            return f"{self._get_full_name(node.value)}.{node.attr}"
-        return None
-
-
-    def build_map(self):
-        for node in ast.walk(self.tree):
-            # 1. Map assignments: b = cfg.camReboot
-            if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
-                val = self._get_full_name(node.value)
-                # ONLY map if we actually found a meaningful substitution string
-                if val and val != "None" and val != "":
-                    self.env[node.targets[0].id] = val
-            
-            # 2. Map function signatures
-            if isinstance(node, ast.FunctionDef):
-                self.func_params[node.name] = [arg.arg for arg in node.args.args]
-            
-            # 3. Collect calls to link parameters later
-            if isinstance(node, ast.Call):
-                self.calls.append(node)
-
-        # Link parameters: a -> cfg.camReboot
-        for call in self.calls:
-            if isinstance(call.func, ast.Name) and call.func.id in self.func_params:
-                for i, arg_node in enumerate(call.args):
-                    param_name = self.func_params[call.func.id][i]
-                    val = self._get_full_name(arg_node)
-                    if val: self.env[param_name] = val
-
-
-    def get_modified_code1(self):
-        self.build_map()
-        modified_lines = []
-        sorted_vars = sorted(self.env.keys(), key=len, reverse=True)
-        
-        for line_text in self.source_lines:
-            # SKIP substitution if the line is a function definition header
-            if line_text.strip().startswith("def "):
-                modified_lines.append(line_text)
-                continue
-                
-            new_line = line_text
-
-            for var in sorted_vars:
-                # Use a negative lookbehind (?<!\.) to ensure the variable 
-                # isn't preceded by a dot (meaning it's an attribute, not a variable)
-                pattern = rf'(?<!\.)\b{var}\b'
-                
-                def replace_func(match):
-                    prefix = new_line[:match.start()]
-                    if prefix.count('"') % 2 != 0 or prefix.count("'") % 2 != 0:
-                        return match.group(0)
-                    return self.env[var]
-                
-                new_line = re.sub(pattern, replace_func, new_line)
-            modified_lines.append(new_line)
-            
-        return "\n".join(modified_lines)
-
-
-    def get_modified_code(self):
-        self.build_map()
-        modified_lines = []
-        
-        # Replace longer names first to avoid partial replacement
-        sorted_vars = sorted(self.env.keys(), key=len, reverse=True)
-
-        for line_text in self.source_lines:
-            stripped = line_text.strip()
-
-            # Skip unsafe lines (critical fix)
-            if stripped.startswith(("def ", "nonlocal ", "global ", "class ")):
-                modified_lines.append(line_text)
-                continue
-
-            new_line = line_text
-
-            for var in sorted_vars:
-                # Safer boundary: avoid attributes and partial matches
-                pattern = rf'(?<![\.\w]){re.escape(var)}(?![\w])'
-
-                def replace_func(match):
-                    start = match.start()
-
-                    # Avoid replacing inside quotes (basic safeguard)
-                    prefix = new_line[:start]
-                    if (
-                        prefix.count('"') % 2 != 0 or
-                        prefix.count("'") % 2 != 0
-                    ):
-                        return match.group(0)
-
-                    return self.env[var]
-
-                new_line = re.sub(pattern, replace_func, new_line)
-
-            modified_lines.append(new_line)
-
-        return "\n".join(modified_lines)
-        
-
 class PresenceConditionVisitor(ast.NodeVisitor):
     def __init__(self, supported_features, code):
         self.conditions = {}
         self.path_condition = "1"
-        self.env = {}
+        # self.env = {}
         self.supported_features = supported_features
         self.source_lines = code.splitlines()
 
@@ -141,40 +27,60 @@ class PresenceConditionVisitor(ast.NodeVisitor):
                 self.conditions[line] = last_known_cond
 
     def combine_logic(self, base, new):
-        if not new or new in ("1", "!()"): return base
-        if base == "1": return new
+        if not new or new in ("1", "!()", "!1", "0"): 
+        # if not new or new in ("1", "!()"): 
+            return base
+        if not base or base == "1": 
+            return new
         
         # Only wrap 'base' or 'new' if they contain an OR operator 
         # to respect Boolean precedence (AND > OR)
-        left = f"({base})" if " || " in base else base
-        right = f"({new})" if " || " in new else new
+        # left = f"({base})" if " || " in base else base
+        # right = f"({new})" if " || " in new else new
+        # 3. Respect Boolean precedence (AND > OR)
+        # If a sub-expression contains an unparenthesized OR, wrap it
+        left = f"({base})" if " || " in base and not (base.startswith("(") and base.endswith(")")) else base
+        right = f"({new})" if " || " in new and not (new.startswith("(") and new.endswith(")")) else new
         return f"{left} && {right}"
 
     def expr_to_str(self, expr, target_id=None):
-        if expr is None: return ""
+        if expr is None: 
+            return ""
         
         # 1. Base Cases (No parens needed)
         if isinstance(expr, ast.Name):
-            if expr.id in self.env: return self.env[expr.id]
-            if expr.id in self.supported_features: return expr.id
-            return expr.id if target_id and expr.id == target_id else ""
+            if expr.id in self.supported_features:
+                return expr.id
+
+            if target_id and expr.id == target_id:
+                return expr.id
+            else:
+                return ""
         
         if isinstance(expr, ast.Attribute):
             if expr.attr in self.supported_features or (target_id and expr.attr == target_id):
                 return expr.attr
             val_str = self.expr_to_str(expr.value, target_id=target_id)
-            #return f"{val_str}.{expr.attr}" if val_str else ""
-            return f"{val_str}.{expr.attr}" if val_str else ""
+            if val_str:
+                return f"{val_str}.{expr.attr}" 
+            else:
+                return ""
 
-        if isinstance(expr, ast.Constant): return str(expr.value)
+        if isinstance(expr, ast.Constant):
+            # If the constant is a boolean, map it to logic digits
+            if isinstance(expr.value, bool):
+                return "1" if expr.value else "0"
+            return str(expr.value)
 
         # 2. Boolean Logic (Smart Wrapping)
         if isinstance(expr, ast.BoolOp):
             is_or = isinstance(expr.op, ast.Or)
             op_sym = " || " if is_or else " && "
             parts = [v for v in [self.expr_to_str(v) for v in expr.values] if v and v != "1"]
-            if not parts: return "1"
-            if len(parts) == 1: return parts[0]
+            if not parts: 
+                return "1"
+            if len(parts) == 1: 
+                return parts[0]
             
             # Sub-parts need parens ONLY if we are doing AND over OR children
             processed_parts = []
@@ -187,9 +93,13 @@ class PresenceConditionVisitor(ast.NodeVisitor):
 
         if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
             operand = self.expr_to_str(expr.operand)
-            if not operand or operand == "1": return "1"
+            if not operand or operand == "1": 
+                 return "1"
             # Wrap only if operand has spaces (meaning it's a compound expression)
-            return f"!({operand})" if " " in operand else f"!{operand}"
+            if " " in operand:
+                return f"!({operand})"
+            else:
+                return f"!{operand}"
 
         # 3. Comparisons (Parens usually safer but optional if simple)
 
@@ -205,56 +115,156 @@ class PresenceConditionVisitor(ast.NodeVisitor):
             }
             op_sym = ops.get(type(expr.ops[0]), "?")
             right = self.expr_to_str(expr.comparators[0])
-            return f"({left} {op_sym} {right})" if left and right else ""
+            if left and right:
+                return f"({left} {op_sym} {right})"
+            else:
+                return ""
 
         if isinstance(expr, ast.Call):
             if isinstance(expr.func, ast.Name):
                 if expr.func.id == "any" and isinstance(expr.args[0], ast.List):
                     elts = [e for e in [self.expr_to_str(x, target_id=target_id) for x in expr.args[0].elts] if e]
-                    return " || ".join(elts) if elts else ""
+                    if elts:
+                        return " || ".join(elts)
+                    else:
+                        return ""
                 if expr.func.id == "range" and target_id:
                     stop = self.expr_to_str(expr.args[0], target_id=target_id)
-                    return f"{target_id} < {stop}" if stop else ""
+                    if stop:
+                        return f"{target_id} < {stop}"
+                    else:
+                        return ""
         return ""
 
+    def record_node_lines(self, node):
+        """Ensures all lines spanning a node are tagged with the active path condition."""
+        if hasattr(node, 'lineno'):
+            end = node.end_lineno if hasattr(node, 'end_lineno') else node.lineno
+            for line in range(node.lineno, end + 1):
+                if line not in self.conditions or self.conditions[line] == "1":
+                    # Apply the tracked condition to the exact line span
+                    self.conditions[line] = self.path_condition
+
     def visit_ImportFrom(self, node):
+        self.record_node_lines(node)  # Explicitly map the path condition first!
         self.record(node)
-        module_path = node.module if node.module else ""
-        for alias in node.names:
-            local_name = alias.asname if alias.asname else alias.name
-            if alias.name in self.supported_features:
-                self.env[local_name] = alias.name
-            else:
-                self.env[local_name] = f"{module_path}.{alias.name}" if module_path else alias.name
         self.generic_visit(node)
 
     def visit_Assign(self, node):
+        # Explicitly record line metrics before diving into sub-nodes
+        self.record_node_lines(node)
         self.record(node)
-        if isinstance(node.targets[0], ast.Name):
-            self.env[node.targets[0].id] = self.expr_to_str(node.value)
         self.generic_visit(node)
+
+    def parse_if_condition(self, node):
+        """
+        Recursively reduces:
+        - 'X == True' / 'X is True' -> 'X'
+        - 'X == False' / 'X is False' -> 'not X'
+        - 'X is None' -> 'not X'
+        - 'X is not None' -> 'X'
+        - 'not(not X)' -> 'X'
+        """
+
+        # Case 1: Handle logical combinations like 'and' / 'or'
+        if isinstance(node, ast.BoolOp):
+            node.values = [self.parse_if_condition(val) for val in node.values]
+            return node
+
+        # Case 2: Handle explicit 'not' operators
+        if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+            # Recursively parse the inner expression first
+            inner_node = self.parse_if_condition(node.operand)
+            
+            # Double Negation Optimization: if inner node is already a 'not', they cancel out!
+            # e.g., not(not A) -> A
+            if isinstance(inner_node, ast.UnaryOp) and isinstance(inner_node.op, ast.Not):
+                return inner_node.operand
+                
+            node.operand = inner_node
+            return node
+
+        # Case 3: Handle comparisons
+        if isinstance(node, ast.Compare):
+            if len(node.ops) == 1 and len(node.comparators) == 1:
+                op = node.ops[0]
+                comparator = node.comparators[0]
+                
+                if isinstance(comparator, ast.Constant):
+                    val = comparator.value
+                    
+                    # --- Rule Set 1: Evaluate to 'A' (Truthy Outcome) ---
+                    # 1. A == True
+                    # 2. A is True
+                    # 3. A != False
+                    # 4. A is not False
+                    if (isinstance(op, (ast.Eq, ast.Is)) and val is True) or \
+                       (isinstance(op, (ast.NotEq, ast.IsNot)) and val is False) or \
+                       (isinstance(op, ast.IsNot) and val is None):
+                        return self.parse_if_condition(node.left)
+
+                    # --- Rule Set 2: Evaluate to 'not A' (Falsy Outcome) ---
+                    # 1. A == False
+                    # 2. A is False
+                    # 3. A != True
+                    # 4. A is not True
+                    # 5. A is None
+                    elif (isinstance(op, (ast.Eq, ast.Is)) and val is False) or \
+                         (isinstance(op, (ast.NotEq, ast.IsNot)) and val is True) or \
+                         (isinstance(op, ast.Is) and val is None):
+                        
+                        normalized_left = self.parse_if_condition(node.left)
+                        # Strip double negations if nested: e.g., if left was already 'not A' -> 'A'
+                        if isinstance(normalized_left, ast.UnaryOp) and isinstance(normalized_left.op, ast.Not):
+                            return normalized_left.operand
+                        return ast.UnaryOp(op=ast.Not(), operand=normalized_left)
+        return node
 
     def visit_If(self, node, current_path=None):
         effective_path = current_path if current_path is not None else self.path_condition
-        cond_str = self.expr_to_str(node.test)
+        if_cond = self.parse_if_condition(node.test)
+        cond_str = self.expr_to_str(if_cond)
         
+        # Fallback: If expr_to_str returns empty because it's not in supported_features,
+        # fallback to trying to read raw source, or fallback to the attribute name string literal.
+        if not cond_str:
+            if isinstance(node.test, ast.Attribute):
+                # Attributes like cfg.camReboot can fall back if the attribute is recognized
+                if node.test.attr in self.supported_features:
+                    cond_str = node.test.attr
+            elif isinstance(node.test, ast.Name):
+                # Simple variables only fall back if they are explicitly supported features
+                if node.test.id in self.supported_features:
+                    cond_str = node.test.id
+
+            
         header_start = node.lineno
         body_start = node.body[0].lineno
         for line in range(header_start, body_start):
             self.conditions[line] = effective_path
 
         old_path = self.path_condition
-        true_path = self.combine_logic(effective_path, cond_str)
+        true_path = self.combine_logic(effective_path, cond_str) if cond_str else effective_path
         self.path_condition = true_path
+        
+        # Ensure all statements in the body are stamped explicitly with the path condition
         for stmt in node.body:
             self.visit(stmt)
             
         if node.orelse:
-            # Negate: wrap only if cond_str is complex
-            negated_cond = f"!({cond_str})" if " " in cond_str else f"!{cond_str}" if cond_str else ""
-            false_path = self.combine_logic(effective_path, negated_cond)
-            
-            if isinstance(node.orelse[0], ast.If):
+            if cond_str:
+                negated_cond = f"!({cond_str})" if " " in cond_str else f"!{cond_str}"
+            else:
+                negated_cond = ""
+
+            if negated_cond:
+                false_path = self.combine_logic(effective_path, negated_cond)
+            else:
+                false_path = effective_path
+
+            # FIX: Only treat as an 'elif' chain if the 'if' is the ONLY statement in the else block.
+            # If len(node.orelse) > 1, it contains siblings (like an if AND a try block).
+            if len(node.orelse) == 1 and isinstance(node.orelse[0], ast.If):
                 self.visit_If(node.orelse[0], current_path=false_path)
             else:
                 else_body_start = node.orelse[0].lineno
@@ -274,6 +284,7 @@ class PresenceConditionVisitor(ast.NodeVisitor):
         
         self.path_condition = old_path
 
+
     def visit_While(self, node):
         cond_str = self.expr_to_str(node.test)
         for line in range(node.lineno, node.body[0].lineno):
@@ -285,76 +296,28 @@ class PresenceConditionVisitor(ast.NodeVisitor):
         self.path_condition = old_path
 
     def visit_For(self, node):
-        t_id = node.target.id if isinstance(node.target, (ast.Name, ast.Attribute)) else None
-        cond_str = self.expr_to_str(node.iter, target_id=t_id)
+        #cond_str = self.expr_to_str(node.test)
         for line in range(node.lineno, node.body[0].lineno):
             self.conditions[line] = self.path_condition
-            
-        old_path = self.path_condition
-        self.path_condition = self.combine_logic(old_path, cond_str)
-        for stmt in node.body: self.visit(stmt)
-        self.path_condition = old_path
-
-    def visit_Try(self, node):
-        for line in range(node.lineno, node.body[0].lineno):
-            self.conditions[line] = self.path_condition
-            
-        old_path = self.path_condition
-        accum_excs = []
         
+        old_path = self.path_condition
         for stmt in node.body: 
             self.visit(stmt)
+        self.path_condition = old_path
+
+
+    def visit_Try(self, node):
+        # 1. Map the 'try:' header lines to the current condition path
+        for line in range(node.lineno, node.body[0].lineno):
+            self.conditions[line] = self.path_condition
         
-        for handler in node.handlers:
-            # 1. Extract name
-            if handler.type is None:
-                exc_name = "Exception"
-            elif isinstance(handler.type, ast.Name):
-                exc_name = handler.type.id
-            elif isinstance(handler.type, ast.Attribute):
-                parts = []
-                curr = handler.type
-                while isinstance(curr, ast.Attribute):
-                    parts.append(curr.attr)
-                    curr = curr.value
-                if isinstance(curr, ast.Name): parts.append(curr.id)
-                exc_name = ".".join(reversed(parts))
-            else:
-                exc_name = self.expr_to_str(handler.type)
-            
-            # 2. Build logic without redundant inner parens
-            not_prev_str = " && ".join([f"!{e}" if "." not in e and " " not in e else f"!({e})" for e in accum_excs])
-            
-            # Logic: (!(Prev)) && Current
-            if not_prev_str:
-                # not_prev_str already contains &&, so it doesn't need parens when joined with another &&
-                current_exc_logic = f"{not_prev_str} && {exc_name}"
-            else:
-                current_exc_logic = exc_name
-            
-            h_cond = self.combine_logic(old_path, current_exc_logic)
-            
-            header_end = handler.body[0].lineno
-            for line in range(handler.lineno, header_end):
-                self.conditions[line] = h_cond
-                
-            self.path_condition = h_cond
-            for stmt in handler.body: self.visit(stmt)
-            accum_excs.append(exc_name)
-            
-        if node.orelse:
-            not_any_exc = " && ".join([f"!{e}" for e in accum_excs])
-            else_path = self.combine_logic(old_path, not_any_exc)
-            else_keyword_line = node.orelse[0].lineno - 1
-            self.conditions[else_keyword_line] = else_path
-            self.path_condition = else_path
-            for stmt in node.orelse: self.visit(stmt)
+        old_path = self.path_condition
+        # 3. Visit the body statements to process internal nested loops (like our inner 'if')
+        for stmt in node.body: 
+            self.visit(stmt)
             
         self.path_condition = old_path
-        if node.finalbody:
-            finally_keyword_line = node.finalbody[0].lineno - 1
-            self.conditions[finally_keyword_line] = old_path
-            for stmt in node.finalbody: self.visit(stmt)
+
 
     def visit_IfExp(self, node):
         cond_str = self.expr_to_str(node.test)
@@ -382,6 +345,28 @@ class PresenceConditionVisitor(ast.NodeVisitor):
         # We do NOT visit children normally here because we've manually 
         # handled the line mapping for the sub-expressions.
 
+
+    def visit_With(self, node):
+        for line in range(node.lineno, node.body[0].lineno):
+            self.conditions[line] = self.path_condition
+
+        # 2. Visit everything inside the context body
+        old_path = self.path_condition
+        for stmt in node.body:
+            self.visit(stmt)
+        self.path_condition = old_path
+
+    def visit_AsyncWith(self, node):
+        for line in range(node.lineno, node.body[0].lineno):
+            self.conditions[line] = self.path_condition
+
+        # 2. Visit everything inside the context body
+        old_path = self.path_condition
+        for stmt in node.body:
+            self.visit(stmt)
+        self.path_condition = old_path
+
+
     # Standard visitors
     def visit_FunctionDef(self, node): self.record(node); self.generic_visit(node)
     def visit_ClassDef(self, node): self.record(node); self.generic_visit(node)
@@ -392,20 +377,13 @@ class PresenceConditionVisitor(ast.NodeVisitor):
 
 
 def extract_presence_conditions(code, supported_features, output_file):
-    # --- FIRST PASS: Substitution ---
-    sub_engine = AdvancedSubstitution(code)
-    substituted_code = sub_engine.get_modified_code()
-    
-    # --- SECOND PASS: Logic Analysis ---
-    # We parse the SUBSTITUTED code so the AST contains the resolved names
-    tree = ast.parse(substituted_code)
-    
-    # We pass the substituted code strings to the visitor so line indexing matches
-    visitor = PresenceConditionVisitor(supported_features, substituted_code)
+
+    tree = ast.parse(code)
+    visitor = PresenceConditionVisitor(supported_features, code)
     visitor.visit(tree)
 
     # Finalize and write to file
-    total_lines = len(substituted_code.splitlines())
+    total_lines = len(code.splitlines())
     visitor.finalize(total_lines)
 
     with open(output_file, "w") as f:

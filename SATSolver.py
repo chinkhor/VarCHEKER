@@ -50,7 +50,7 @@ class SATSolver:
 
     def verify_req_id(self, req_ids, presence_condition):
         rtw_table = self.rtw.table
-        features = self.pc.getFeatures(presence_condition)
+        features = self.pc.extract_features(presence_condition)
         new_req_ids = []
         for req_id in req_ids:
             rtw_entry = rtw_table[req_id]
@@ -70,6 +70,7 @@ class SATSolver:
                 stat.inconsistencies.append(["   Source Code location:", src_location])
             requirement_ids = i_dict["Requirement ID"]
             requirement_sentences = i_dict["Requirement Sentence"]
+            print(f"i_dict: {i_dict}")
             for i, req_id in enumerate(requirement_ids):
                 sentence = requirement_sentences[i]
                 req_id = self.verify_req_id(req_id, pc)
@@ -156,7 +157,12 @@ class SATSolver:
             features = []
             self.solver = Solver()
             for assignments in pc:
-                feature, val = str(assignments).split(' == ')
+                if ' == ' in str(assignments):
+                    feature, val = str(assignments).split(' == ')
+                elif ' != ' in str(assignments):
+                    feature, val = str(assignments).split(' != ')
+                else:
+                    raise Exception(f"to do")
                 feature = feature.strip()
                 if feature not in features:
                     features.append(feature)

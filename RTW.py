@@ -85,12 +85,12 @@ class RTW:
         self.dict_result = {}
         self.dict_formula = {'R2': self.R2Formula, 'R3': self.R3Formula, 'R4': self.R4Formula, 'R5': self.R5Formula}
         self.operator_map = {
-            'eq_to': '==', 
-            'not_eq': '!=', 
-            'gr_th': '>', 
-            'le_th': '<', 
-            'gr_eq': '>=', 
-            'le_eq': '<='
+            '_eq_to_': '==', 
+            '_not_eq_': '!=', 
+            '_gr_th_': '>', 
+            '_le_th_': '<', 
+            '_gr_eq_': '>=', 
+            '_le_eq_': '<='
         }
 
         # construct feature map between feature model and code implementation - need RTW nodes
@@ -469,7 +469,19 @@ class RTW:
         # construct feature model constraints
         self.constructXMLFeaturModelConstraints()
         self.FM_XML.append('</featureModel>\n')
-        
+
+    def preprocess_name(self, name):
+        new_name = name.replace("abstract_", "")
+        new_name = new_name.replace("_choice", "")
+
+        for key in self.operator_map: 
+            if key in new_name:
+                lhs, rhs = new_name.split(key, 1)
+                # Decide if it's a string or numeric
+                return lhs + self.operator_map[key] + rhs
+        return new_name
+                
+
     # use DFS to construct the feature diagram to show the parent-child hierarchical releationship 
     # the syntax is compatible for the featureIDE tool (for feature diagram rendering)
     def constructXMLFeatureDiagram(self, node):
@@ -481,7 +493,8 @@ class RTW:
                 line = line + 'abstract="true" '
             if node.rule == 'R2' or node.private == 'R2':
                 line = line + 'mandatory="true" '
-            line = line + 'name="' + node.name + '">\n'
+            new_name = self.preprocess_name(node.name)
+            line = line + 'name="' + new_name + '">\n'
             self.FM_XML.append(line)
             # add requirement ID as description for traceability
             self.FM_XML.append('\t\t\t<description>Requirements: ' + str(node.tracedReq) + '</description>\n')
@@ -493,7 +506,8 @@ class RTW:
                 line = line + 'abstract="true" '
             if node.rule == 'R2' or node.private == 'R2' or node.name == self.root.name:
                 line = line + 'mandatory="true" '
-            line = line + 'name="' + node.name + '">\n'
+            new_name = self.preprocess_name(node.name)
+            line = line + 'name="' + new_name + '">\n'
             self.FM_XML.append(line)
             # add requirement ID as description for traceability
             self.FM_XML.append('\t\t<description>Requirements: ' + str(node.tracedReq) + '</description>\n')
@@ -545,8 +559,8 @@ class RTW:
 
     def get_Z3_variable(self, var_name):
         for op_key in self.operator_map:
-            if f"_{op_key}_" in var_name:
-                lhs, rhs = var_name.split(f"_{op_key}_", 1)
+            if f"{op_key}" in var_name:
+                lhs, rhs = var_name.split(f"{op_key}", 1)
                 
                 # Decide if it's a string or numeric
                 if rhs.isdigit():  # simple integer check
@@ -560,17 +574,17 @@ class RTW:
                     lhs_var = String(lhs)
                 
                 # Build the Z3 formula
-                if op_key == 'eq_to':
+                if op_key == '_eq_to_':
                     return lhs_var == (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
-                elif op_key == 'not_eq':
+                elif op_key == '_not_eq_':
                     return lhs_var != (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
-                elif op_key == 'gr_th':
+                elif op_key == '_gr_th_':
                     return lhs_var > rhs_val
-                elif op_key == 'le_th':
+                elif op_key == '_le_th_':
                     return lhs_var < rhs_val
-                elif op_key == 'gr_eq':
+                elif op_key == '_gr_eq_':
                     return lhs_var >= rhs_val
-                elif op_key == 'le_eq':
+                elif op_key == '_le_eq_':
                     return lhs_var <= rhs_val
                 else:
                     raise ValueError(f"Unsupported operator {op_key}")
@@ -736,6 +750,6 @@ class RTW:
             print(f"Textual requirements NOT implemented in source code:")
             req_not_covered.sort()
             for req in req_not_covered:
-                print(f"   {req}: {self.table[req].Req}")
+                print(f"   {req}")
 
   

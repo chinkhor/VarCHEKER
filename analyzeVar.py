@@ -58,13 +58,13 @@ def main(rtwFile, mapFile, path, file, filter, project):
     print("\nAnalyzing presence conditions. Please wait...")
     pc.findPresenceConditions()
     pc.reverseFeatureMap(rtw.code2feature_map)
-    pc.showFeatureModelMap()
-    rtw.showFeatureMap()
+    #pc.showFeatureModelMap()
+    #rtw.showFeatureMap()
     #pc.discardNumericals()
     pc.showPresenceConditionsStat()
     
     pc.getAssignments()
-    pc.showAssignmentsWeight()
+    #pc.showAssignmentsWeight()
  
     pc.findFeaturesNotInFeatureModel()
     pc.findFeaturesInFeatureModel()
