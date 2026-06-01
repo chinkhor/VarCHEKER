@@ -1,14 +1,14 @@
 0_Statistics,ua_app
-Required Features in Source Code,9
-Required Features NOT in Source Code,0
-Total Required Features,9
-Textual Requirements NOT Implemented in Source Code,0
-Total Textual Requirements,10
-Features in Source Code Specified in Requirements,9
+Required Features in Source Code,62
+Required Features NOT in Source Code,26
+Total Required Features,88
+Textual Requirements NOT Implemented in Source Code,35
+Total Textual Requirements,106
+Features in Source Code Specified in Requirements,43
 Features in Source Code NOT Specified in Requirements,1
-Total Features in Source Code,10
-Total Presence Conditions in Source Code,14
-Implemented Lines NOT Specified by Requirements,4
-Total variability lines of code,111
-Total lines of code,654
-Are Variability Requirements and Source Code Consistent?,Yes
+Total Features in Source Code,44
+Total Presence Conditions in Source Code,80
+Implemented Lines NOT Specified by Requirements,13
+Total variability lines of code,773
+Total lines of code,27732
+Are Variability Requirements and Source Code Consistent?,No

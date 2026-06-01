@@ -1,1 +1,23 @@
 01_Required Features,Associated Requirement(s)
+getRawImages,"['UA-1.2', 'UA-1.2.8.1', 'UA-1.2.8.2', 'UA-7.2.6']"
+packetDelay,['UA-1.1.7']
+unencoded,['UA-7.1']
+force,['UA-1.1.5.3']
+sharpen_image,['UA-1.1.2.2']
+sharpness_score,['UA-1.1.3']
+time_profile,['UA-1.1.10']
+getRawUndetectedBalls,"['UA-1.2', 'UA-1.2.7.1', 'UA-1.2.7.2', 'UA-7.2.7']"
+auto_exposure,['UA-1.1.8']
+camReset,['UA-1.1.9']
+play_frame_by_frame,"['UA-1.2.5.6', 'UA-1.2.15.1', 'UA-1.2.15.2']"
+show_batter,"['UA-1.2.5.3.1', 'UA-1.2.11']"
+show_full_frames,"['UA-1.2.5.5', 'UA-1.2.13.1', 'UA-1.2.13.2']"
+full_frame,"['UA-1.2.5.1', 'UA-1.2.14.1', 'UA-1.2.14.2']"
+validate_bboxes,['UA-18.1']
+send_call,"['UA-1.2.16', 'UA-13']"
+collect_bat_data,['UA-1.2.5.7']
+apply_drifts,['UA-1.2.5.11']
+ball_detect_zoom,['UA-1.2.5.15']
+collect_ball_data,['UA-1.2.5.8']
+ignore_swings,['UA-1.2.5.3.6']
+expand_view,['UA-1.2.5.2']
