@@ -1,3 +1,2 @@
 01_Features in Source Code,Code Lines by Feature (coverage),Location
 tp,13 (1.68%),['./ua_app/toolings/validation/comparator.py: 719']
-pt,1 (0.13%),['./ua_app/toolings/validation/comparator.py: 735']
