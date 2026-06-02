@@ -27,10 +27,10 @@ april_tag_finder,False,True,True,any,False,False,False
 getFrames,False,False,True,False,any,True,True
 display,True,any,True,True,any,True,any
 rtsp,True,False,any,any,any,any,any
-pixel_format,"""""","""BayerRG8""","""BayerRG8""","""BayerRG8""","""Mono8""","""BayerRG8""","""RGB8"""
+pixel_format,"""""","""BayerRG8""","""BayerRG8""","""BayerRG8""","""RGB8""","""BayerRG8""","""Mono8"""
+sport_type,"""softball""","""baseball""","""""","""""","""""","""softball""","""softball"""
 stereo,False,False,False,False,False,True,any
 batter_present,True,True,False,False,False,True,any
-sport_type,"""softball""","""baseball""","""""","""""","""""","""softball""","""baseball"""
 convert,False,False,False,False,False,False,True
 validate,True,False,False,False,False,False,False
 getPose,False,False,False,True,False,False,False
@@ -38,7 +38,7 @@ camStream,False,True,False,False,False,False,False
 pose_estimation,True,False,False,False,False,True,False
 profiler,True,any,False,False,False,True,any
 display_plots,True,False,True,True,False,True,False
-camera_type,"""""","""allied""","""lucid""","""lucid""","""allied""","""allied""","""allied"""
+camera_type,"""""","""allied""","""lucid""","""lucid""","""lucid""","""allied""","""lucid"""
 new_cams,False,False,False,False,False,False,True
 val_bbx_rm_fld,True,any,False,False,False,False,False
 ua,True,True,False,False,False,True,True
