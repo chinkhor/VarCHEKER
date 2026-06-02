@@ -1,15 +1,15 @@
 01_Presence Condition,02_Total Lines in Code,03_Line Coverage Precentage
-display,98,12.68
-batter_present,92,11.9
-pose_estimation && display_pose_estimation,54,6.99
-profiler,32,4.14
+display,98,12.66
+batter_present,92,11.89
+pose_estimation && display_pose_estimation,54,6.98
+profiler,32,4.13
 !camStream,29,3.75
 save_plot_flag,26,3.36
 !live,25,3.23
 batter_present && adjust_sz_based_on_batter && !pose_estimation,25,3.23
-april_tag_finder,21,2.72
-record,21,2.72
-show_pose_estimation_global,21,2.72
+april_tag_finder,21,2.71
+record,21,2.71
+show_pose_estimation_global,21,2.71
 display_plots,18,2.33
 validate,18,2.33
 !is_first_base_installation,17,2.2
@@ -26,7 +26,7 @@ rtsp,9,1.16
 plot_batter,9,1.16
 (!new_cams && !stereo && !pose && !accuracy && (!(camReboot || camStatus || camSetting || camStream))) && !remote_calibrations,8,1.03
 !tp,8,1.03
-pose_estimation && batter_present,7,0.91
+pose_estimation && batter_present,7,0.9
 val_bbx_onl_fld,6,0.78
 !val_bbx_onl_fld && val_bbx_rm_fld,6,0.78
 !rtsp,5,0.65
@@ -77,5 +77,6 @@ new_cams && convert,1,0.13
 !camStream && !camReboot && camStatus,1,0.13
 !camStream && !camReboot && !camStatus,1,0.13
 !camStream && !camReboot && !camStatus && camSetting,1,0.13
+pt,1,0.13
 !val_bbx_onl_fld,1,0.13
 display_plots || save_plot_flag,1,0.13

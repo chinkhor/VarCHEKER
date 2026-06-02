@@ -5,11 +5,11 @@ Total Required Features,86
 Textual Requirements NOT Implemented in Source Code,35
 Total Textual Requirements,105
 Features in Source Code Specified in Requirements,43
-Features in Source Code NOT Specified in Requirements,1
-Total Features in Source Code,44
-Total Presence Conditions in Source Code,80
-Implemented Lines NOT Specified by Requirements,13
-Total variability lines of code,773
+Features in Source Code NOT Specified in Requirements,2
+Total Features in Source Code,45
+Total Presence Conditions in Source Code,81
+Implemented Lines NOT Specified by Requirements,14
+Total variability lines of code,774
 Total lines of code,27735
 Total files,157
 Are Variability Requirements and Source Code Consistent?,No

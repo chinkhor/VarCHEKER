@@ -5,7 +5,7 @@ state_data_dump,True,any,any,any,any,any,any
 val_bbx_onl_fld,False,True,False,False,False,False,False
 undistort,False,True,False,True,False,False,False
 remote_calibrations,False,True,False,any,True,True,any
-camReboot,False,True,False,False,False,True,False
+camReboot,False,True,False,False,False,True,True
 coco_val_pak,False,True,False,False,False,False,False
 adjust_sz_based_on_batter,True,True,False,False,False,True,False
 show_pose_estimation,True,False,False,False,False,True,False
@@ -22,13 +22,13 @@ plot_batter,True,any,False,False,False,True,False
 swing_store_less,True,any,False,False,False,True,False
 record,False,True,False,False,False,False,False
 validation_model_type,"""ball""","""""",any,any,any,any,any
-camStatus,True,True,False,False,False,True,True
+camStatus,True,True,False,False,False,True,False
 april_tag_finder,False,True,True,any,False,False,False
 getFrames,False,False,True,False,any,True,True
 display,True,any,True,True,any,True,any
 rtsp,True,False,any,any,any,any,any
-pixel_format,"""""","""BayerRG8""","""BayerRG8""","""BayerRG8""","""RGB8""","""BayerRG8""","""Mono8"""
-sport_type,"""softball""","""baseball""","""""","""""","""""","""softball""","""softball"""
+pixel_format,"""""","""BayerRG8""","""BayerRG8""","""BayerRG8""","""Mono8""","""BayerRG8""","""BayerRG8"""
+sport_type,"""softball""","""baseball""","""""","""""","""""","""baseball""","""softball"""
 stereo,False,False,False,False,False,True,any
 batter_present,True,True,False,False,False,True,any
 convert,False,False,False,False,False,False,True
@@ -38,8 +38,9 @@ camStream,False,True,False,False,False,False,False
 pose_estimation,True,False,False,False,False,True,False
 profiler,True,any,False,False,False,True,any
 display_plots,True,False,True,True,False,True,False
-camera_type,"""""","""allied""","""lucid""","""lucid""","""lucid""","""allied""","""lucid"""
+camera_type,"""""","""allied""","""lucid""","""lucid""","""allied""","""allied""","""allied"""
 new_cams,False,False,False,False,False,False,True
 val_bbx_rm_fld,True,any,False,False,False,False,False
 ua,True,True,False,False,False,True,True
+pt,True,any,any,any,any,any,any
 tp,False,True,any,any,any,any,any
