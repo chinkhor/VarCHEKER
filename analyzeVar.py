@@ -35,8 +35,8 @@ def main(rtwFile, mapFile, path, file, filter, project):
                     feature = get_feature(items[1].strip(), operator_map)
                     if feature != "" and feature not in supported_features:
                         supported_features.append(feature)
-    print(f"supported_features: {supported_features}")
-    print(f"Variability source code:")
+    #print(f"supported_features: {supported_features}")
+    #print(f"Variability source code:")
     pc.src_list = getFileLines(pc.src_list_file)
     for file in pc.src_list:
         input_file = file.strip()
@@ -46,6 +46,7 @@ def main(rtwFile, mapFile, path, file, filter, project):
         with open(input_file, "r") as f:
             code = f.read()
             extract_presence_conditions(code, supported_features, output_file)
+    print(f"Total files: {len(pc.src_list)}")
     find_pc_time = round(time.time() - cur_time, 2)
     print(f"Total time for running PCLocator: {find_pc_time} seconds")
     cur_time = time.time()

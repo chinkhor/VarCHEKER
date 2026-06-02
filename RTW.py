@@ -23,11 +23,9 @@ class RTW_Entry:
         self.Parent = ""
         # children features, for R7, R8, R9, R10, it/they represents second feature or subsequent features
         self.Children = []
-        # Entry attribute type: Bool, Str, Int or Float
-        self.Type = ""
         
     def printEntry(self):
-        print("ID : {}, Valid : {}, Rule : {}, Parent : {}, Children : {}, Type: {}".format(self.ID, self.Valid, self.Rule, self.Parent, self.Children, self.Type))
+        print("ID : {}, Valid : {}, Rule : {}, Parent : {}, Children : {}".format(self.ID, self.Valid, self.Rule, self.Parent, self.Children))
         print()
         
 # RTW node is a feature (unit of functionality) 
@@ -47,7 +45,6 @@ class RTW_Node:
         self.tracedReq = []
         # assignment for the feature: True or False
         self.assignment = ""
-        self.type = None
         
         
     # the feature is a terminal node, no child
@@ -58,7 +55,7 @@ class RTW_Node:
             return True
         
     def printNode(self):
-        print("Node: {}, valid {}, Abstract: {}, Rule: {}, Type: {}, private: {}".format(self.name, self.valid, self.abstract, self.rule, self.type, self.private))
+        print("Node: {}, valid {}, Abstract: {}, Rule: {}, private: {}".format(self.name, self.valid, self.abstract, self.rule, self.private))
         if self.parent != None:
             print("   Parent: {}".format(self.parent.name))
         else:
@@ -133,8 +130,7 @@ class RTW:
             lines[index+1].strip().startswith('Valid') and
             lines[index+2].strip().startswith('Rule') and
             lines[index+3].strip().startswith('Parent') and
-            lines[index+4].strip().startswith('Child') and
-            lines[index+5].strip().startswith('Type')):
+            lines[index+4].strip().startswith('Child')):
             return True
         else:
             return False
@@ -171,7 +167,6 @@ class RTW:
                 else:
                     children.append(child)
             entry.Children = children
-        entry.Type = self.parseRTWEntry(lines[index+5], False)
         if entry.Valid == 1:
             if entry.ID not in self.table:
                 self.table[entry.ID] = entry
@@ -203,7 +198,7 @@ class RTW:
             for ID in self.table:
                 entry = self.table[ID]
             f.write("\n")
-            f.write("Requirement ID,Rule,Parent Feature,Children Features,Attribute Type\n")
+            f.write("Requirement ID,Rule,Parent Feature,Children Features\n")
             for ID in self.table:
                 entry = self.table[ID]
                 if entry.Valid and (entry.Rule != 'R1'):
@@ -211,7 +206,7 @@ class RTW:
                     for child in entry.Children:
                         children_str = children_str + child + ", "
                     children_str = children_str[:-2]
-                    f.write("\"" + entry.ID + "\",\"" + entry.Rule + "\",\"" + entry.Parent + "\",\"" + children_str + "\",\"" + entry.Type + "\"\n")
+                    f.write("\"" + entry.ID + "\",\"" + entry.Rule + "\",\"" + entry.Parent + "\",\"" + children_str + "\"\n")
             f.close()
             
     # extract cross-tree constraints from RTW table, maintain in "self.constraints" dictionary
@@ -319,13 +314,13 @@ class RTW:
                         line[0] = line[0].strip()
                         line[1] = line[1].strip()
                         self.feature2code_map[line[0]] = line[1]
-                        if "abstract_" in line[1] and "_choice" in line[1]:
+                        if "abstract_" in line[1] and "_enum" in line[1]:
                             code_var = line[0]
                             feature = line[1]
                             code_var = code_var.replace("abstract_", "")
-                            code_var = code_var.replace("_choice", "")  
+                            code_var = code_var.replace("_enum", "")  
                             feature = feature.replace("abstract_", "")
-                            feature = feature.replace("_choice", "")  
+                            feature = feature.replace("_enum", "")  
                             self.code2feature_map[feature] = code_var   
                         # if "_eq_to_" in line[0]:
                         #     code_var, _ = line[0].split("_eq_to_")
@@ -472,7 +467,7 @@ class RTW:
 
     def preprocess_name(self, name):
         new_name = name.replace("abstract_", "")
-        new_name = new_name.replace("_choice", "")
+        new_name = new_name.replace("_enum", "")
 
         for key in self.operator_map: 
             if key in new_name:

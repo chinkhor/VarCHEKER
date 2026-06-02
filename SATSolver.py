@@ -70,7 +70,7 @@ class SATSolver:
                 stat.inconsistencies.append(["   Source Code location:", src_location])
             requirement_ids = i_dict["Requirement ID"]
             requirement_sentences = i_dict["Requirement Sentence"]
-            print(f"i_dict: {i_dict}")
+            #print(f"i_dict: {i_dict}")
             for i, req_id in enumerate(requirement_ids):
                 sentence = requirement_sentences[i]
                 req_id = self.verify_req_id(req_id, pc)

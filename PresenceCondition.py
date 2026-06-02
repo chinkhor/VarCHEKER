@@ -45,6 +45,7 @@ class VarCHEKStat:
         self.presence_conditions_list = []
         self.min_set_configurations = []
         self.inconsistencies = []
+        self.total_files = 0
 
     def printStat(self, project):
         bmap = {True: "Yes", False: "No"}
@@ -66,6 +67,7 @@ class VarCHEKStat:
         stat_data.append(["Implemented Lines NOT Specified by Requirements",self.implemented_lines_not_in_requirements])
         stat_data.append(["Total variability lines of code",self.var_loc])
         stat_data.append(["Total lines of code",self.loc])
+        stat_data.append(["Total files",self.total_files])
         stat_data.append(["Are Variability Requirements and Source Code Consistent?",bmap[self.requirements_code_consistent]])
         for item in stat_data:
             print(f"{item[0]:60s} {item[1]}")
@@ -276,6 +278,7 @@ class PresenceCondition:
         self.stat.var_loc = self.var_total_lines
         print(f"total lines in source code: {self.total_loc}")
         self.stat.loc = self.total_loc
+        self.stat.total_files = len(self.src_list)
 
     def discardNumericals(self):
         discard_pc = []
@@ -444,6 +447,11 @@ class PresenceCondition:
         for label in self.featuremodel_map_dict:
             print(f"   {label} : {self.featuremodel_map_dict[label]}")
 
+    def findPCLocation(self, pc_loc):
+        lhs, rhs = str(pc_loc[0]).split(':')
+        rhs = int(rhs.strip()) - 1
+        return f"{lhs.strip()}: {str(rhs)}"
+
     def findFeaturesNotInFeatureModel(self):
         print("\nFeatures in Source Code NOT specified in Requirements:")
         total_features = len(self.features_dict)
@@ -454,29 +462,33 @@ class PresenceCondition:
             feature_list.append(feature)
             if feature not in self.featuremodel_map_dict:
                 feature = feature.strip()
-                if ("HEADER" not in feature) and ("_H" not in feature[-2:]):
-                    lines = 0
-                    for pc in self.presence_condition_dict:
-                        if feature in pc:
-                            lines += len(self.presence_condition_dict[pc])
-                    if lines > 0: 
-                        self.feature_not_in_code_coverage[feature] = lines
-                        total_features_not_in_fm += 1
-                    else:
-                        total_features -= 1
+                lines = 0
+                location = []
+                for pc in self.presence_condition_dict:
+                    if feature in pc:
+                        if f"!{feature}" not in pc:
+                            location.append(self.findPCLocation(self.presence_condition_dict[pc])) 
+                        lines += len(self.presence_condition_dict[pc])
+                if lines > 0: 
+                    self.feature_not_in_code_coverage[feature] = [lines, location]
+                    total_features_not_in_fm += 1
                 else:
                     total_features -= 1
+                
 
         x = self.feature_not_in_code_coverage
         self.feature_not_in_code_coverage = dict(sorted(x.items(), key=lambda item: item[1],reverse=True))
         total_lines = 0
         if len(self.feature_not_in_code_coverage) > 0:
-            self.stat.code_features_not_in_requirements_list.append(["01_Features in Source Code", "Code Lines by Feature", "Feature Codes %"])
+            self.stat.code_features_not_in_requirements_list.append(["01_Features in Source Code", "Code Lines by Feature (coverage)", "Location"])
         for feature in self.feature_not_in_code_coverage:
-            coverage = round(self.feature_not_in_code_coverage[feature]*100/self.var_total_lines, 2)
-            print(f"     {feature:30s}: lines: {self.feature_not_in_code_coverage[feature]:^5d}, coverage: {coverage:<.2f}%")
-            self.stat.code_features_not_in_requirements_list.append([feature, self.feature_not_in_code_coverage[feature], coverage])
-            total_lines = total_lines + self.feature_not_in_code_coverage[feature]
+            lines, location = self.feature_not_in_code_coverage[feature]
+            coverage = round(lines*100/self.var_total_lines, 2)
+            print(f"     {feature:30s}: lines: {lines:^5d} (coverage: {coverage:<.2f}%)")
+            space = ' '
+            print(f"     location: {location}")
+            self.stat.code_features_not_in_requirements_list.append([feature, f"{lines} ({coverage}%)", location])
+            total_lines = total_lines + lines
         if total_features == 0:
             print(f"Total Features in Source Code NOT specified in Requirements: {total_features_not_in_fm}")
         else:
