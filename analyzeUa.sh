@@ -21,7 +21,7 @@ echo "###########################################################"
 echo "Finding all python files in ua_app"
 find ./$ua_dir -name "*.py" > $dir/$file
 
-python3 analyzeVar.py --path $dir --file $file --filter $ua_filter --rtw_file requirements/RTW_ua.txt --feature_map code_map/map_ua --project "ua_app"
+python3 analyzeVar.py --path $dir --file $file --filter $ua_filter --rtw_file requirements/RTW_ua.csv --feature_map code_map/map_ua.txt --project "ua_app"
 echo "Completed analysis."
 git add reports/*.csv && git commit -m "update $(date)" && git push origin main
 echo

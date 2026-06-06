@@ -1,5 +1,6 @@
 from itertools import combinations
 from z3 import *
+import pandas as pd
 
 class RTW_Entry:
     # number of elements per RTW entry
@@ -103,6 +104,7 @@ class RTW:
         if self.parseRTW(filename) == False:
             print("RTW instantiation is aborted.")
             return
+
         # construct RTW features/nodes (2nd thing to do) - depend on RTW table
         self.constructRTWFeatures()        
         # construct feature diagram in tree - need RTW table and RTW nodes
@@ -119,49 +121,26 @@ class RTW:
         # construct feature model in XML form - need RTW table, RTW nodes, RTW tree, RTW constraints 
         self.constructXMLFeatureModel()
         # export RTW table to CSV file - need RTW table
-        self.exportRTW2CSV(filename[0].replace(".txt",".csv"))
+        # self.exportRTW2CSV(filename[0].replace(".txt",".csv"))
         # export feature model to XML file - need feature model in XML form (represented by self.FM_XML)
         self.exportFeatureModel2XML(self.root.name.replace('_','') + "FeatureModel.xml")
         
-    # validate the input file has a block of valid elements for single RTW entry
-    def validateRTWEntry(self, index, lines):
-        if ((index + RTW_Entry.elements - 1 < len(lines)) and
-            lines[index].strip().startswith('ID') and 
-            lines[index+1].strip().startswith('Valid') and
-            lines[index+2].strip().startswith('Rule') and
-            lines[index+3].strip().startswith('Parent') and
-            lines[index+4].strip().startswith('Child')):
-            return True
-        else:
-            return False
-    
-    # parse single RTW entry which consists of ID, valid, rule, parent feature, children features, requirement
-    # specification and source of requirements (for traceability)
-    def parseRTWEntry(self, line, multi_entry):
-        separator = '-->'
-        if not multi_entry:
-            return line[line.find(separator) + len(separator):].strip()
-        # multiple terms such as children
-        else:
-            words = line[line.find(separator) + len(separator):].strip().split(',')
-            for i in range(len(words)):
-                words[i] = words[i].strip()
-            return words
-
+        
     # construct a single RTW entry
-    def constructRTWEntry(self, index, lines):
+    def constructRTWEntry(self, record):
         entry = RTW_Entry()
-        entry.ID = self.parseRTWEntry(lines[index], False)
-        entry.Valid = int(self.parseRTWEntry(lines[index+1], False))
-        entry.Rule = self.parseRTWEntry(lines[index+2], False)
-        entry.Parent = self.parseRTWEntry(lines[index+3], False)
-        entry.Children = self.parseRTWEntry(lines[index+4], True)
+        entry.ID = record["Requirement ID"].strip()
+        entry.Valid = int(record["Valid"])
+        entry.Rule = record["Rule"].strip()
+        entry.Parent = record["Parent Feature"].strip()
+        entry.Children = record["Children Features"].split(',')
         # if feature2code map is available, convert feature name to code variable name here
         if len(self.feature2code_map) > 0:
             if entry.Parent in self.feature2code_map:
                 entry.Parent = self.feature2code_map[entry.Parent]
             children = []
             for child in entry.Children:
+                child = child.strip()
                 if child in self.feature2code_map:
                     children.append(self.feature2code_map[child])
                 else:
@@ -172,42 +151,49 @@ class RTW:
                 self.table[entry.ID] = entry
             else:
                 raise Exception(f"Duplicate ID: {entry.ID} is detected")
-        
+    
     # parse the input RTW file to extract and construct RTW entries
     def parseRTW(self, files):
-        for filename in files:
+        for file in files:
             try:
-                with open(filename, 'r') as f:
-                    lines = f.readlines()
-                f.close()
-            except FileNotFoundError:
-                print("File '{}' is not found".format(filename))
+                df = pd.read_csv(file)
+            except:
+                print(f"Error reading {file}")
                 return False
-            for index in range(len(lines)):
-                # every valid RTW entry starts with ID (first element of RTW entry) 
-                if lines[index].strip().startswith('ID'):
-                    if self.validateRTWEntry(index, lines):
-                        self.constructRTWEntry(index, lines)
-                        index += RTW_Entry.elements
-        return True
-    
+            records = df.to_dict("records")
+            for record in records:
+                self.constructRTWEntry(record)
+        return True      
+
     # export the RTW table to CSV file
     # can be use for import to popular requirement management tools such as Jira, DOOR, etc
     def exportRTW2CSV(self, filename):
         with open(filename, 'w') as f:
             for ID in self.table:
                 entry = self.table[ID]
-            f.write("\n")
-            f.write("Requirement ID,Rule,Parent Feature,Children Features\n")
+            f.write("Requirement ID,Valid,Rule,Parent Feature,Children Features\n")
             for ID in self.table:
                 entry = self.table[ID]
-                if entry.Valid and (entry.Rule != 'R1'):
-                    children_str = ""
-                    for child in entry.Children:
-                        children_str = children_str + child + ", "
-                    children_str = children_str[:-2]
-                    f.write("\"" + entry.ID + "\",\"" + entry.Rule + "\",\"" + entry.Parent + "\",\"" + children_str + "\"\n")
+                parent_feature = entry.Parent
+                parent_feature = parent_feature.replace("abstract_", "")
+                parent_feature = parent_feature.replace("_enum", "")
+                for operator in self.operator_map:
+                    if operator in parent_feature:
+                        parent_feature = parent_feature.replace(operator, self.operator_map[operator])
+                        break
+                children_str = ""
+                for child in entry.Children:
+                    child = child.replace("abstract_", "")
+                    child = child.replace("_enum", "")
+                    for operator in self.operator_map:
+                        if operator in child:
+                            child = child.replace(operator, self.operator_map[operator])
+                            break
+                    children_str = children_str + child + ", "
+                children_str = children_str[:-2]
+                f.write("\"" + entry.ID + "\",\"" + str(entry.Valid) + "\",\"" + entry.Rule + "\",\"" + parent_feature + "\",\"" + children_str + "\"\n")
             f.close()
+
             
     # extract cross-tree constraints from RTW table, maintain in "self.constraints" dictionary
     # key of dictionary: requirement ID 
