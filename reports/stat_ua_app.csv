@@ -1,14 +1,14 @@
 0_Statistics,ua_app
-Required Features in Source Code,62
-Required Features NOT in Source Code,26
+Required Features in Source Code,66
+Required Features NOT in Source Code,22
 Total Required Features,88
 Textual Requirements NOT Implemented in Source Code,35
 Total Textual Requirements,106
-Features in Source Code Specified in Requirements,43
-Features in Source Code NOT Specified in Requirements,1
+Features in Source Code Specified in Requirements,39
+Features in Source Code NOT Specified in Requirements,5
 Total Features in Source Code,44
 Total Presence Conditions in Source Code,80
-Implemented Lines NOT Specified by Requirements,13
+Implemented Lines NOT Specified by Requirements,30
 Total variability lines of code,773
 Total lines of code,27733
 Total files,157

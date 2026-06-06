@@ -1,2 +1,6 @@
 01_Features in Source Code,Code Lines by Feature (coverage),Location
 tp,13 (1.68%),['./ua_app/toolings/validation/comparator.py: 719']
+validation_model_type,8 (1.03%),"['./ua_app/toolings/utility_functions/validation.py: 99', './ua_app/toolings/utility_functions/validation.py: 35']"
+camera_type,7 (0.91%),"['./ua_app/universal_configs.py: 517', './ua_app/universal_configs.py: 515', './ua_app/stream_utils.py: 492']"
+pixel_format,1 (0.13%),['./ua_app/stream_utils.py: 265']
+sport_type,1 (0.13%),['./ua_app/runtime_setup/runtime_components_setup.py: 244']
