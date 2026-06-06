@@ -9,15 +9,15 @@ time_profile,['UA-1.1.10']
 getRawUndetectedBalls,"['UA-1.2', 'UA-1.2.7.1', 'UA-1.2.7.2', 'UA-7.2.7']"
 auto_exposure,['UA-1.1.8']
 camReset,['UA-1.1.9']
-show_batter,"['UA-1.2.5.3.1', 'UA-1.2.11']"
-full_frame,"['UA-1.2.5.1', 'UA-1.2.14.1', 'UA-1.2.14.2']"
-show_full_frames,"['UA-1.2.5.5', 'UA-1.2.13.1', 'UA-1.2.13.2']"
 play_frame_by_frame,"['UA-1.2.5.6', 'UA-1.2.15.1', 'UA-1.2.15.2']"
-expand_view,['UA-1.2.5.2']
+show_batter,"['UA-1.2.5.3.1', 'UA-1.2.11']"
+show_full_frames,"['UA-1.2.5.5', 'UA-1.2.13.1', 'UA-1.2.13.2']"
+full_frame,"['UA-1.2.5.1', 'UA-1.2.14.1', 'UA-1.2.14.2']"
 validate_bboxes,['UA-18.1']
-ignore_swings,['UA-1.2.5.3.6']
-collect_ball_data,['UA-1.2.5.8']
-ball_detect_zoom,['UA-1.2.5.15']
 send_call,"['UA-1.2.16', 'UA-13']"
-apply_drifts,['UA-1.2.5.11']
 collect_bat_data,['UA-1.2.5.7']
+apply_drifts,['UA-1.2.5.11']
+ball_detect_zoom,['UA-1.2.5.15']
+collect_ball_data,['UA-1.2.5.8']
+ignore_swings,['UA-1.2.5.3.6']
+expand_view,['UA-1.2.5.2']
