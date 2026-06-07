@@ -246,7 +246,7 @@ class SATSolver:
                         print("Error in backtracking")   
             # add the solution to the list
             self.configSet.append(self.model)
-            #print(pc_check_list)
+            #print(f"\ncheck_list:\n   {pc_check_list}")
             self.configs_pc.append(config_pc)
             # revert back all 'X' item to 'O' and repeat the process
             while 'X' in pc_check_list:
@@ -263,6 +263,7 @@ class SATSolver:
             for count, config in enumerate(self.configSet):
                 for feature in config:
                     feature_str = str(feature)
+                    #print(f"minset, feature: {feature_str}")
                     if feature_str not in self.code_features:
                         #print(f"Min set: discard feature: {feature_str} (not in code)")
                         if feature_str not in self.feature_not_in_code:
@@ -283,7 +284,7 @@ class SATSolver:
                 for i in range(len(settings), config_numbers):
                     self.config_table[feature].append('any')    
 
-    def printConfigTable(self, feature_map, stat):
+    def printConfigTable(self, support_features, stat):
         if len(self.configSet) > 0:
             stat.min_set_configurations.append(['01_Feature'])
         print("\n  %40s " % "Feature", end =" ")
@@ -294,7 +295,7 @@ class SATSolver:
         user_config_table = {}
         code_config_table = {}
         for feature in self.config_table:
-            if feature in feature_map:
+            if feature in support_features:
                 user_config_table[feature] = self.config_table[feature]
             else:
                 code_config_table[feature] = self.config_table[feature]

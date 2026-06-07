@@ -78,26 +78,18 @@ class RTW:
         self.sat_formula = []
         self.features = {}
         self.table = {}
-        self.feature2code_map = {}
-        self.code2feature_map = {}
         self.dict_result = {}
         self.dict_formula = {'R2': self.R2Formula, 'R3': self.R3Formula, 'R4': self.R4Formula, 'R5': self.R5Formula}
-        self.operator_map = {
-            '_eq_to_': '==', 
-            '_not_eq_': '!=', 
-            '_gr_th_': '>', 
-            '_le_th_': '<', 
-            '_gr_eq_': '>=', 
-            '_le_eq_': '<='
-        }
-
-        # construct feature map between feature model and code implementation - need RTW nodes
-        if feature_map is not None:
-            if self.setupFeatureMap(feature_map) == False:
-                self.features = {}
-                self.table = {}
-                print("RTW instantiation is aborted.")
-                return
+        self.operator_map = [
+            '==', 
+            '!=', 
+            '>', 
+            '<', 
+            '>=', 
+            '<='
+        ]
+        self.feature_assignment_choice = {}
+        self.feature_open_choice = {}
 
         # sequence of method calls, the order is crucial to ensure dependencies
         # build RTW table (1st thing to do)
@@ -120,10 +112,9 @@ class RTW:
         self.constructFMSentences()
         # construct feature model in XML form - need RTW table, RTW nodes, RTW tree, RTW constraints 
         self.constructXMLFeatureModel()
-        # export RTW table to CSV file - need RTW table
-        # self.exportRTW2CSV(filename[0].replace(".txt",".csv"))
         # export feature model to XML file - need feature model in XML form (represented by self.FM_XML)
         self.exportFeatureModel2XML(self.root.name.replace('_','') + "FeatureModel.xml")
+        self.support_features = self.get_support_features()
         
         
     # construct a single RTW entry
@@ -134,18 +125,8 @@ class RTW:
         entry.Rule = record["Rule"].strip()
         entry.Parent = record["Parent Feature"].strip()
         entry.Children = record["Children Features"].split(',')
-        # if feature2code map is available, convert feature name to code variable name here
-        if len(self.feature2code_map) > 0:
-            if entry.Parent in self.feature2code_map:
-                entry.Parent = self.feature2code_map[entry.Parent]
-            children = []
-            for child in entry.Children:
-                child = child.strip()
-                if child in self.feature2code_map:
-                    children.append(self.feature2code_map[child])
-                else:
-                    children.append(child)
-            entry.Children = children
+        for i, child in enumerate(entry.Children):
+            entry.Children[i] = entry.Children[i].strip()
         if entry.Valid == 1:
             if entry.ID not in self.table:
                 self.table[entry.ID] = entry
@@ -164,36 +145,6 @@ class RTW:
             for record in records:
                 self.constructRTWEntry(record)
         return True      
-
-    # export the RTW table to CSV file
-    # can be use for import to popular requirement management tools such as Jira, DOOR, etc
-    def exportRTW2CSV(self, filename):
-        with open(filename, 'w') as f:
-            for ID in self.table:
-                entry = self.table[ID]
-            f.write("Requirement ID,Valid,Rule,Parent Feature,Children Features\n")
-            for ID in self.table:
-                entry = self.table[ID]
-                parent_feature = entry.Parent
-                parent_feature = parent_feature.replace("abstract_", "")
-                parent_feature = parent_feature.replace("_enum", "")
-                for operator in self.operator_map:
-                    if operator in parent_feature:
-                        parent_feature = parent_feature.replace(operator, self.operator_map[operator])
-                        break
-                children_str = ""
-                for child in entry.Children:
-                    child = child.replace("abstract_", "")
-                    child = child.replace("_enum", "")
-                    for operator in self.operator_map:
-                        if operator in child:
-                            child = child.replace(operator, self.operator_map[operator])
-                            break
-                    children_str = children_str + child + ", "
-                children_str = children_str[:-2]
-                f.write("\"" + entry.ID + "\",\"" + str(entry.Valid) + "\",\"" + entry.Rule + "\",\"" + parent_feature + "\",\"" + children_str + "\"\n")
-            f.close()
-
             
     # extract cross-tree constraints from RTW table, maintain in "self.constraints" dictionary
     # key of dictionary: requirement ID 
@@ -263,62 +214,24 @@ class RTW:
                 continue
             parent = entry.Parent.strip()
             if parent not in self.features:
+                #print(f"parent feature: {parent}")
                 self.features[parent] = RTW_Node(parent)
-
-                if len(self.code2feature_map) > 0 and parent not in self.code2feature_map:
-                    self.features[parent].abstract = True
-                elif 'abstract_' in parent:
+                if 'abstract_' in parent:
                     self.features[parent].abstract = True    
             # add requirement ID to the node's requirement tracing list (variable tracedReq)
             if entry.ID not in self.features[parent].tracedReq:
                 self.features[parent].tracedReq.append(entry.ID)
             for child in entry.Children:
                 child = child.strip()
+                #print(f"child feature: {child}")
                 if child not in self.features:
                     self.features[child] = RTW_Node(child)
-                    if len(self.code2feature_map) > 0 and child not in self.code2feature_map:
-                        self.features[child].abstract = True  
-                    elif 'abstract_' in child:
+                    if 'abstract_' in child:
                         self.features[child].abstract = True       
                 if entry.ID not in self.features[child].tracedReq:
                     self.features[child].tracedReq.append(entry.ID)
 
-    # map features to pre-processor directive macros (codes) in implementation
-    # has dependency on constructRTWFeatures to construct RTW node first
-    def setupFeatureMap(self, files):
-        self.feature2code_map = {}
-        self.code2feature_map = {}
-        for filename in files:
-            try:
-                with open(filename, 'r') as f:
-                    lines = f.readlines()
-                    for line in lines:
-                        line = line.split()
-                        # if len is 1 or less, not a valid entry
-                        if len(line) <= 1:
-                            continue
-                        line[0] = line[0].strip()
-                        line[1] = line[1].strip()
-                        self.feature2code_map[line[0]] = line[1]
-                        if "abstract_" in line[1] and "_enum" in line[1]:
-                            code_var = line[0]
-                            feature = line[1]
-                            code_var = code_var.replace("abstract_", "")
-                            code_var = code_var.replace("_enum", "")  
-                            feature = feature.replace("abstract_", "")
-                            feature = feature.replace("_enum", "")  
-                            self.code2feature_map[feature] = code_var   
-                        # if "_eq_to_" in line[0]:
-                        #     code_var, _ = line[0].split("_eq_to_")
-                        #     self.code2feature_map[line[1]] = code_var
-                        else:
-                            self.code2feature_map[line[1]] = line[0]
-                    f.close()
-            except FileNotFoundError:
-                print("File '{}' is not found".format(filename))
-                return False
-        return True
-    
+ 
     # construct the tree for features to show hierarchy of parents and children features relationship 
     # tree node is RTW node of the feature
     def constructRTWTree(self):
@@ -339,7 +252,7 @@ class RTW:
                 # change rule to R6 when combining R2 and R3
                 node.rule = 'R6'
             for child in entry.Children:
-                childnode = self.features[child]
+                childnode = self.features[child.strip()]
                 # variable "private" is used to indicate the original parent-child relationship (e.g. R2 and R3)
                 # R2 and R3 may be combined and become R6
                 childnode.private = entry.Rule 
@@ -451,17 +364,6 @@ class RTW:
         self.constructXMLFeaturModelConstraints()
         self.FM_XML.append('</featureModel>\n')
 
-    def preprocess_name(self, name):
-        new_name = name.replace("abstract_", "")
-        new_name = new_name.replace("_enum", "")
-
-        for key in self.operator_map: 
-            if key in new_name:
-                lhs, rhs = new_name.split(key, 1)
-                # Decide if it's a string or numeric
-                return lhs + self.operator_map[key] + rhs
-        return new_name
-                
 
     # use DFS to construct the feature diagram to show the parent-child hierarchical releationship 
     # the syntax is compatible for the featureIDE tool (for feature diagram rendering)
@@ -474,8 +376,7 @@ class RTW:
                 line = line + 'abstract="true" '
             if node.rule == 'R2' or node.private == 'R2':
                 line = line + 'mandatory="true" '
-            new_name = self.preprocess_name(node.name)
-            line = line + 'name="' + new_name + '">\n'
+            line = line + 'name="' + node.name + '">\n'
             self.FM_XML.append(line)
             # add requirement ID as description for traceability
             self.FM_XML.append('\t\t\t<description>Requirements: ' + str(node.tracedReq) + '</description>\n')
@@ -487,8 +388,7 @@ class RTW:
                 line = line + 'abstract="true" '
             if node.rule == 'R2' or node.private == 'R2' or node.name == self.root.name:
                 line = line + 'mandatory="true" '
-            new_name = self.preprocess_name(node.name)
-            line = line + 'name="' + new_name + '">\n'
+            line = line + 'name="' + node.name + '">\n'
             self.FM_XML.append(line)
             # add requirement ID as description for traceability
             self.FM_XML.append('\t\t<description>Requirements: ' + str(node.tracedReq) + '</description>\n')
@@ -555,21 +455,22 @@ class RTW:
                     lhs_var = String(lhs)
                 
                 # Build the Z3 formula
-                if op_key == '_eq_to_':
+                if op_key == '==':
                     return lhs_var == (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
-                elif op_key == '_not_eq_':
+                elif op_key == '!=':
                     return lhs_var != (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
-                elif op_key == '_gr_th_':
+                elif op_key == '>':
                     return lhs_var > rhs_val
-                elif op_key == '_le_th_':
+                elif op_key == '<':
                     return lhs_var < rhs_val
-                elif op_key == '_gr_eq_':
+                elif op_key == '>=':
                     return lhs_var >= rhs_val
-                elif op_key == '_le_eq_':
-                    return lhs_var <= rhs_val
+                elif op_key == '<=':
+                    return lhs_var <= rhs_val                
                 else:
                     raise ValueError(f"Unsupported operator {op_key}")
         return Bool(var_name)
+
 
     # apply formula for R2 rule (mandatory child): parent <=> child
     # convert <=> to => for ACTS tool compatibility, i.e. parent => child, child => parent
@@ -637,6 +538,24 @@ class RTW:
         self.sat_formula.append([Implies(parent_var, Or(sat_children)), node.tracedReq])
         self.sat_formula.append([Implies(Or(sat_children), parent_var), node.tracedReq])
 
+    def get_support_features(self):
+        support_features = []
+        for feature in self.features:
+            feature_node = self.features[feature]
+            if feature_node.valid != 1:
+                continue
+            elif 'abstract_' in feature:
+                continue
+            elif '==' in feature:
+                lhs, rhs = feature.split("==")
+                lhs = lhs.strip()
+                if lhs not in support_features:
+                    support_features.append(lhs)
+            else:
+                if feature not in support_features:
+                    support_features.append(feature)
+        return support_features
+
     def showRTWConstraints(self):
         print("Constraints:")
         for ID in self.constraints:
@@ -676,46 +595,41 @@ class RTW:
             for feature in solutions:
                 print('   {0:15s} : {1:5s}'.format(feature, solutions[feature]))   
                 
-    def showFeatureMap(self):
-        print("\nFeature Map: ")
-        for feature in self.feature2code_map:
-            print('   {0:15s} : {1:30s}'.format(feature, self.feature2code_map[feature]))
-            
+    def showSupportedFeatures(self):
+        print("\nSupported Features:")
+        for feature in self.support_features:
+            print(f"   {feature}")
+
     def showTestResult(self):
         print("\nTest Result:")
         for status in self.dict_result:
             print("  {}: {}".format(status, self.dict_result[status]))
         print()
   
-    def showFeaturesNotInCode(self, features_not_in_code, stat):
-        if features_not_in_code is None:
+    def showFeaturesNotInCode(self, features_in_code, stat):
+        if features_in_code is None:
             return
-        abstract_feature = 0
+        total_features_not_in_code = 0
         req_not_covered = []
         print("\nRequired Features NOT in source code:")
-        if len(features_not_in_code) > 0:
-            stat.required_features_not_in_code_list.append(["01_Required Features", "Associated Requirement(s)"])
-        for feature in features_not_in_code:
-            if feature in self.features:
-                feature_node = self.features[feature]
-                if feature_node.valid != 1:
-                    continue
-                if feature_node.abstract == True:
-                    abstract_feature += 1
-                    continue
-                print(f"   feature: {feature:30s}, requirements: {feature_node.tracedReq}")
-                stat.required_features_not_in_code_list.append([feature, feature_node.tracedReq])
-                req_not_covered = req_not_covered + feature_node.tracedReq
-        total_features = 0
-        for feature in self.features:
-            feature_node = self.features[feature]
-            if feature_node.valid == 1 and feature_node.abstract != True:
-                total_features += 1
-        #total_features = len(self.features) - abstract_feature
+        for feature in self.support_features:
+            if feature in features_in_code:
+                continue
+            if total_features_not_in_code == 0:
+                stat.required_features_not_in_code_list.append(["01_Required Features", "Associated Requirement(s)"])
+
+            for feature_str in self.features:
+                if feature in feature_str:
+                    feature_node = self.features[feature_str]
+                    print(f"   feature: {feature:30s}, requirements: {feature_node.tracedReq}")
+                    total_features_not_in_code += 1
+                    stat.required_features_not_in_code_list.append([feature, feature_node.tracedReq])
+                    req_not_covered = req_not_covered + feature_node.tracedReq
+                    break
+        total_features = len(self.support_features)
         print(f"Total Required Features in Variability Model: {total_features}")
         stat.total_required_features = total_features
         if total_features != 0:
-            total_features_not_in_code = len(features_not_in_code) - abstract_feature
             print(f"Total Required Feature NOT in source code: {total_features_not_in_code} ({total_features_not_in_code*100/total_features:<0.2f}%)")
             stat.required_features_not_in_code = total_features_not_in_code
             stat.required_features_in_code = stat.total_required_features - stat.required_features_not_in_code

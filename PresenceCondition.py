@@ -101,13 +101,12 @@ class VarCHEKStat:
                 csv_writer.writerows(self.inconsistencies)
 
 class PresenceCondition:    
-    def __init__(self, path, filename, filter):
+    def __init__(self, path, filename, required_features):
         self.ifnames_file = path + "/ifnames"
         self.path = path
         self.src_list_file = path + '/' + filename
         self.var_list_file = path + "/var_list_file"
-        self.filter_files = path + '/' + filter
-        self.featuremodel_map_dict = {}
+        # self.featuremodel_map_dict = {}
         self.src_list = []
         self.assignment_list = []
         self.assignment_list_weight = []
@@ -121,6 +120,7 @@ class PresenceCondition:
         self.assignment2presence_cond = {}
         self.total_loc = 0
         self.stat = VarCHEKStat()
+        self.required_features = required_features
 
 
     def extract_features(self, expression):
@@ -439,13 +439,13 @@ class PresenceCondition:
             self.assignment_list_weight.append([assignments, weight, source_lines])
         self.assignment_list_weight = sorted(self.assignment_list_weight, key=lambda x: x[1], reverse=True)
 
-    def reverseFeatureMap(self, feature_map):
-        self.featuremodel_map_dict = feature_map
+    # def reverseFeatureMap(self, feature_map):
+    #     self.featuremodel_map_dict = feature_map
 
-    def showFeatureModelMap(self):
-        print("\nFeature: Code Variable to Feature Model Map")
-        for label in self.featuremodel_map_dict:
-            print(f"   {label} : {self.featuremodel_map_dict[label]}")
+    # def showFeatureModelMap(self):
+    #     print("\nFeature: Code Variable to Feature Model Map")
+    #     for label in self.featuremodel_map_dict:
+    #         print(f"   {label} : {self.featuremodel_map_dict[label]}")
 
     def findPCLocation(self, pc_loc):
         lhs, rhs = str(pc_loc[0]).split(':')
@@ -460,7 +460,7 @@ class PresenceCondition:
         feature_list = []
         for feature in self.features_dict:
             feature_list.append(feature)
-            if feature not in self.featuremodel_map_dict:
+            if feature not in self.required_features:
                 feature = feature.strip()
                 lines = 0
                 location = []
@@ -505,7 +505,7 @@ class PresenceCondition:
         # total_features = len(self.features_dict)
         total_features_in_fm = 0
         for feature in self.features_dict:
-            if feature in self.featuremodel_map_dict:
+            if feature in self.required_features:
                 total_features_in_fm += 1
                 print(f"    {feature}")
         print(f"Total Features in Source Code specified in Requirements: {total_features_in_fm}")
