@@ -1,27 +1,44 @@
 01_Required Features,Associated Requirement(s)
-getRawImages,"['UA-1.2', 'UA-1.2.8.1', 'UA-1.2.8.2', 'UA-7.2.6']"
-player_gender,"['UA-1.2.5.13', 'UA-1.2.5.13.1']"
-white_balance_algo,"['UA-1.1.12', 'UA-1.1.12.1']"
-packetDelay,['UA-1.1.7']
-unencoded,['UA-7.1']
-force,['UA-1.1.5.3']
-sharpen_image,['UA-1.1.2.2']
-sharpness_score,['UA-1.1.3']
-time_profile,['UA-1.1.10']
-getRawUndetectedBalls,"['UA-1.2', 'UA-1.2.7.1', 'UA-1.2.7.2', 'UA-7.2.7']"
-camera_profile,"['UA-1.1.13', 'UA-1.1.13.1']"
-player_age,"['UA-1.2.5.12', 'UA-1.2.5.12.1']"
-auto_exposure,['UA-1.1.8']
-camReset,['UA-1.1.9']
-play_frame_by_frame,"['UA-1.2.5.6', 'UA-1.2.15.1', 'UA-1.2.15.2']"
-show_batter,"['UA-1.2.5.3.1', 'UA-1.2.11']"
-show_full_frames,"['UA-1.2.5.5', 'UA-1.2.13.1', 'UA-1.2.13.2']"
-full_frame,"['UA-1.2.5.1', 'UA-1.2.14.1', 'UA-1.2.14.2']"
-validate_bboxes,['UA-18.1']
-send_call,"['UA-1.2.16', 'UA-13']"
-collect_bat_data,['UA-1.2.5.7']
-apply_drifts,['UA-1.2.5.11']
-ball_detect_zoom,['UA-1.2.5.15']
-collect_ball_data,['UA-1.2.5.8']
-ignore_swings,['UA-1.2.5.3.6']
-expand_view,['UA-1.2.5.2']
+camera_type,"['UA-1.1.11', 'UA-1.1.11.1']"
+display_plots,"['UA-1.2.12', 'UA-6.1']"
+display,"['UA-1.2.5.3.5.3', 'UA-1.2.12']"
+is_first_base_installation,['UA-14']
+ua,"['UA-1.2.5', 'UA-1.2.5.1', 'UA-1.2.5.2', 'UA-1.2.5.3', 'UA-1.2.5.4', 'UA-1.2.5.5', 'UA-1.2.5.6', 'UA-1.2.5.7', 'UA-1.2.5.8', 'UA-1.2.5.9', 'UA-1.2.5.10', 'UA-1.2.5.11', 'UA-1.2.5.12', 'UA-1.2.5.13', 'UA-1.2.5.14', 'UA-1.2.5.15', 'UA-1.2.7.2', 'UA-1.2.8.2', 'UA-1.2.9.1', 'UA-1.2.10.1', 'UA-1.2.16']"
+save_plot_flag,['UA-1.2.5.10']
+live,"['UA-1.1', 'UA-1.1.2', 'UA-1.1.3', 'UA-1.1.4', 'UA-1.1.5', 'UA-1.1.7', 'UA-1.1.8', 'UA-1.1.9', 'UA-1.1.10', 'UA-1.1.11', 'UA-1.1.12', 'UA-1.1.13', 'UA-1.2.2', 'UA-1.2.4', 'UA-1.2.5.9.1', 'UA-1.2.7.1', 'UA-1.2.8.1', 'UA-1.2.9.3', 'UA-1.2.10.2', 'UA-1.2.13.2', 'UA-1.2.14.1', 'UA-1.2.15.2', 'UA-7.2.5', 'UA-10.1']"
+april_tag_finder,"['UA-1.2.9.4', 'UA-1.2.16', 'UA-10', 'UA-10.1']"
+validate,"['UA-1.2.5.9', 'UA-1.2.5.9.1']"
+overlay,['UA-8']
+rtsp,['UA-11']
+sport_type,"['UA-1.2.5.14', 'UA-1.2.5.14.1']"
+profiler,['UA-1.2.5.4']
+state_data_dump,['UA-17']
+record,"['UA-7', 'UA-7.1', 'UA-7.2.1', 'UA-7.2.2', 'UA-7.2.3', 'UA-7.2.4', 'UA-7.2.5', 'UA-7.2.6', 'UA-7.2.7', 'UA-7.2.8']"
+convert,['UA-1.2.6']
+pose_estimation,"['UA-1.2.5.3.5', 'UA-1.2.5.3.5.1', 'UA-1.2.5.3.5.2', 'UA-1.2.5.3.5.3']"
+batter_present,"['UA-1.2.5.3', 'UA-1.2.5.3.1', 'UA-1.2.5.3.2', 'UA-1.2.5.3.3', 'UA-1.2.5.3.4', 'UA-1.2.5.3.5', 'UA-1.2.5.3.6']"
+swing_store_less,['UA-1.2.5.3.3']
+plot_batter,['UA-1.2.5.3.2']
+adjust_sz_based_on_batter,['UA-1.2.5.3.4']
+show_pose_estimation,['UA-1.2.5.3.5.1']
+show_pose_estimation_global,['UA-1.2.5.3.5.2']
+getFrames,"['UA-1.2', 'UA-1.2.1', 'UA-1.2.2', 'UA-7.2.1']"
+getPose,"['UA-1.2', 'UA-1.2.3', 'UA-1.2.4', 'UA-7.2.2']"
+undistort,"['UA-1.1.4', 'UA-1.2.1', 'UA-1.2.3']"
+setZone,"['UA-1.2.9', 'UA-1.2.9.1', 'UA-1.2.9.2', 'UA-1.2.9.3', 'UA-1.2.9.4', 'UA-1.2.16']"
+zone_indicator,"['UA-1.2', 'UA-1.2.9.2', 'UA-1.2.10.1', 'UA-1.2.10.2', 'UA-1.2.16']"
+new_cams,"['UA-1.2', 'UA-1.2.6', 'UA-7.2.8']"
+stereo,"['UA-1.2', 'UA-7.2.3']"
+pose,['UA-1.2']
+accuracy,"['UA-1.2', 'UA-7.2.4']"
+camReboot,"['UA-1.1.5.1', 'UA-1.1.5.3']"
+camStatus,['UA-1.1.5.1']
+camSetting,['UA-1.1.5.1']
+camStream,['UA-1.1.5.1']
+remote_calibrations,['UA-1.2']
+pixel_format,"['UA-1.1.2', 'UA-1.1.2.1']"
+validation_model_type,"['UA-18.5', 'UA-18.5.1']"
+val_bbx_onl_fld,['UA-18.4']
+val_bbx_rm_fld,['UA-18.3']
+coco_val_pak,['UA-18.2']
+display_pose_estimation,"['UA-1.2.5.3.5.3', 'UA-1.2.12']"
