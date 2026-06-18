@@ -106,7 +106,6 @@ class PresenceCondition:
         self.path = path
         self.src_list_file = path + '/' + filename
         self.var_list_file = path + "/var_list_file"
-        # self.featuremodel_map_dict = {}
         self.src_list = []
         self.assignment_list = []
         self.assignment_list_weight = []
@@ -124,30 +123,22 @@ class PresenceCondition:
 
 
     def extract_features(self, expression):
-        # 1. Define all common comparators
-        # We look for the operator, optional spaces, and then the following word/value
-        # Pattern: (Operator)(Spaces)(Value)
+        # pattern: (Operator)(Spaces)(Value)
         comparators_pattern = r'(==|!=|<=|>=|<|>)\s*[a-zA-Z0-9_]+'
-        
-        # 2. Scrub the values out
+        # scrub the values out
         scrubbed_expr = re.sub(comparators_pattern, '', expression)
-        
-        # 3. Define the pattern for the remaining identifiers
-        # Must start with a letter/underscore
+        # define the pattern for the remaining identifiers
+        # must start with a letter/underscore
         id_pattern = r'[a-zA-Z_.][a-zA-Z0-9_.]*'
-        
-        # 4. Find all matches in the scrubbed text
+        # find all matches in the scrubbed text
         raw_matches = re.findall(id_pattern, scrubbed_expr)
-        
-        # 5. Clean up: Remove logical keywords and duplicates
+        # clean up: Remove logical keywords and duplicates
         # Note: 'live' is kept because it's usually a boolean feature identifier
         logical_ops = {'and', 'or', 'not', '&&', '||', '!', 'True', 'False'}
-        
         identifiers = []
         for item in raw_matches:
             if item.lower() not in logical_ops and item not in identifiers:
-                identifiers.append(item)
-                
+                identifiers.append(item)     
         return identifiers
 
     def find_words_with_substring(self, text, substring):
@@ -181,10 +172,8 @@ class PresenceCondition:
             if new_line == '1':
                 continue
             if new_line in self.presence_condition_dict:
-                #self.presence_condition_dict[line_element[2]].append((int(line_element[0]), file_index))
                 self.presence_condition_dict[new_line].append(f"{filename}: {count+1}")
             else:
-                #self.presence_condition_dict[line_element[2]] = [(int(line_element[0]), file_index)]
                 self.presence_condition_dict[new_line] = [f"{filename}: {count+1}"]
             # get the pc in this file
             if new_line not in pc:
@@ -201,16 +190,6 @@ class PresenceCondition:
         return pc
 
 
-    '''
-        # | line of code   | FeatureCopp  |
-      ----+----------------+--------------+ 
-        A | B              | C            |
-        
-    A is line number
-    B is code at line A
-    C is presence condition
-    | is the separator
-    '''
     def parsePC(self, filename):
         file = filename.strip()
         if file[-3:].lower() == ".py":
@@ -218,22 +197,11 @@ class PresenceCondition:
         f_name=file.replace(ext, f"{ext}.txt")
         lines = getFileLines(f_name)
         self.total_loc = self.total_loc + len(lines)
-        #file_index = self.src_list.index(filename)
         return self.parsePC_Python(lines, filename)
 
-        
     def findPresenceConditions(self):
         for filename in self.src_list:
             pcs = self.parsePC(filename)
-            # comparators = ['==', '>', '<', '%', '>=', '<=', '!=', '%=']
-            # pc_copy = pcs.copy()
-            # for pc in pc_copy:
-            #     for com in comparators:
-            #         if com in pc:
-            #             #print(f"Discard PC: {pc}")
-            #             pcs.remove(pc)
-            #             del self.presence_condition_dict[pc]
-            #             break
             self.var_file_pc[filename] = pcs
         self.sortPresenceConditions()
 
@@ -280,17 +248,6 @@ class PresenceCondition:
         self.stat.loc = self.total_loc
         self.stat.total_files = len(self.src_list)
 
-    def discardNumericals(self):
-        discard_pc = []
-        saved_pc = self.presence_condition_dict.copy()
-        matches = ['==', '>', '<', '%', '>=', '<=', '!=', '%=']
-        #matches = ['==', '>', '<', '%', '>=', '<=', '!=', '%=', "0&&", "0 &&", "&&0", "&& 0"]
-        for pc in saved_pc:
-            for term in matches:
-                if term in pc:
-                    discard_pc.append(pc)
-                    del self.presence_condition_dict[pc]
-                    break
 
     def showAssignments(self):
         print("\nAssignments for Presence Conditions")
@@ -318,19 +275,9 @@ class PresenceCondition:
 
     def convert2DNF(self, pc):
         feature_list = {}
-        # print(f"pc: {pc}")
         formula = parse_expr(pc, evaluate=False)
-        # print(f"formula: {formula}")
         dnf_formula = to_dnf(formula, simplify=False)
         dnf_min = simplify_logic(dnf_formula, form='dnf', force=True)
-
-        # symbols = {str(s) for s in dnf_formula.atoms()}
-        # for symbol in symbols:
-        #     if symbol not in feature_list:
-        #         feature_list[symbol] = Symbol(symbol)
-        # print(f"symbols: {feature_list}")
-        
-        # print(f"dnf: {dnf_formula}")
         return dnf_min
 
     def is_float(self, var):
@@ -398,7 +345,6 @@ class PresenceCondition:
         assignments_dict = {}
         for ori_pc in self.presence_condition_dict:
             pc = ori_pc
-            # print(f"pc: {pc}")
             source_lines = self.presence_condition_dict[pc]
             lines = len(source_lines) 
             pc = pc.replace("&&", " & ")
@@ -407,29 +353,17 @@ class PresenceCondition:
             pc = pc.replace("!", "~")
             pc = pc.replace("_NOT_EQUAL_", "!=")
             dnf = self.convert2DNF(pc)
-            # dnf, feature_list = self.convert2DNF(pc)
-            # if dnf is None or dnf == -1:
-            #     continue
-            # else:
-            #     features = []
-            #     for feature in feature_list:
-            #         features.append(feature)
-            #     self.pc_features[ori_pc] = features
+
             sentences = str(dnf).split(' | ')
-            # print(f"sentences: {sentences}")
             for sentence in sentences:
-                # print(f"sentence: {sentence}")
                 assignment = self._getAssignments(sentence.strip())
-                # print(f"assignment: {assignment}")
                 key = str(assignment)
-                # print(f"key: {key}")
                 if key not in assignments_dict:
                     assignments_dict[key] = [assignment, lines, source_lines]
                     self.assignment2presence_cond[key] = ori_pc
                 else:
                     source_lines_exist = assignments_dict[key][2]
                     assignments_dict[key] = [assignment, assignments_dict[key][1] + lines, source_lines + source_lines_exist] 
-        
         for key in assignments_dict:
             lines = assignments_dict[key][1]
             assignments = assignments_dict[key][0]
@@ -438,14 +372,6 @@ class PresenceCondition:
             self.assignment_list.append([assignments, lines, source_lines])
             self.assignment_list_weight.append([assignments, weight, source_lines])
         self.assignment_list_weight = sorted(self.assignment_list_weight, key=lambda x: x[1], reverse=True)
-
-    # def reverseFeatureMap(self, feature_map):
-    #     self.featuremodel_map_dict = feature_map
-
-    # def showFeatureModelMap(self):
-    #     print("\nFeature: Code Variable to Feature Model Map")
-    #     for label in self.featuremodel_map_dict:
-    #         print(f"   {label} : {self.featuremodel_map_dict[label]}")
 
     def findPCLocation(self, pc_loc):
         lhs, rhs = str(pc_loc[0]).split(':')
@@ -474,8 +400,6 @@ class PresenceCondition:
                     total_features_not_in_fm += 1
                 else:
                     total_features -= 1
-                
-
         x = self.feature_not_in_code_coverage
         self.feature_not_in_code_coverage = dict(sorted(x.items(), key=lambda item: item[1],reverse=True))
         total_lines = 0
@@ -510,12 +434,3 @@ class PresenceCondition:
                 print(f"    {feature}")
         print(f"Total Features in Source Code specified in Requirements: {total_features_in_fm}")
         self.stat.code_features_in_requirements = total_features_in_fm
-               
-    
-    
-
-
-        
-
-
-            

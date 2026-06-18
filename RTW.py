@@ -2,10 +2,7 @@ from itertools import combinations
 from z3 import *
 import pandas as pd
 
-class RTW_Entry:
-    # number of elements per RTW entry
-    elements = 7
-    
+class RTW_Entry:    
     def __init__(self):
         # requirement ID, for traceability
         self.ID = ""
@@ -47,7 +44,6 @@ class RTW_Node:
         # assignment for the feature: True or False
         self.assignment = ""
         
-        
     # the feature is a terminal node, no child
     def isLeaf(self):
         if len(self.children) > 0:
@@ -67,7 +63,6 @@ class RTW_Node:
         else:
             print("   Children: None")
         print("   Requirements Traceability: {}".format(self.tracedReq))
-        
             
 class RTW:
     def __init__(self, filename, feature_map=None):
@@ -89,7 +84,6 @@ class RTW:
             '<='
         ]
         self.feature_assignment_choice = {}
-        self.feature_open_choice = {}
 
         # sequence of method calls, the order is crucial to ensure dependencies
         # build RTW table (1st thing to do)
@@ -113,9 +107,8 @@ class RTW:
         # construct feature model in XML form - need RTW table, RTW nodes, RTW tree, RTW constraints 
         self.constructXMLFeatureModel()
         # export feature model to XML file - need feature model in XML form (represented by self.FM_XML)
-        self.exportFeatureModel2XML(self.root.name.replace('_','') + "FeatureModel.xml")
+        self.exportFeatureModel2XML(self.root.name.replace('_','').replace('abstract', '') + "FeatureModel.xml")
         self.support_features = self.get_support_features()
-        
         
     # construct a single RTW entry
     def constructRTWEntry(self, record):
@@ -456,19 +449,26 @@ class RTW:
                 
                 # Build the Z3 formula
                 if op_key == '==':
+                    if lhs_var not in self.feature_assignment_choice:
+                        self.feature_assignment_choice[lhs_var] = [rhs_val]
+                    else:
+                        if rhs_val not in self.feature_assignment_choice[lhs_var]:
+                            self.feature_assignment_choice[lhs_var].append(rhs_val)       
                     return lhs_var == (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
-                elif op_key == '!=':
-                    return lhs_var != (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
-                elif op_key == '>':
-                    return lhs_var > rhs_val
-                elif op_key == '<':
-                    return lhs_var < rhs_val
-                elif op_key == '>=':
-                    return lhs_var >= rhs_val
-                elif op_key == '<=':
-                    return lhs_var <= rhs_val                
+                # elif op_key == '!=':
+                #     return lhs_var != (StringVal(rhs_val) if isinstance(lhs_var, str) else rhs_val)
+                # elif op_key == '>':
+                #     return lhs_var > rhs_val
+                # elif op_key == '<':
+                #     return lhs_var < rhs_val
+                # elif op_key == '>=':
+                #     return lhs_var >= rhs_val
+                # elif op_key == '<=':
+                #     return lhs_var <= rhs_val                
                 else:
                     raise ValueError(f"Unsupported operator {op_key}")
+        if var_name not in self.feature_assignment_choice:
+            self.feature_assignment_choice[var_name] = [True, False]      
         return Bool(var_name)
 
 
@@ -580,7 +580,6 @@ class RTW:
             if node.abstract:
                 node.printNode()
     
-
     def showSATFormula(self):
         print("\nSAT Formula list: ")
         for s in self.sat_formula:
@@ -606,6 +605,12 @@ class RTW:
             print("  {}: {}".format(status, self.dict_result[status]))
         print()
   
+    def showFeatureAssignmentChoice(self):
+        print("\nFeature Assignment Choice:")
+        for feature in self.feature_assignment_choice:
+            print(f"  {feature}: {self.feature_assignment_choice[feature]}")
+        print()
+
     def showFeaturesNotInCode(self, features_in_code, stat):
         if features_in_code is None:
             return
@@ -646,5 +651,4 @@ class RTW:
             req_not_covered.sort()
             for req in req_not_covered:
                 print(f"   {req}")
-
-  
+                 

@@ -14,28 +14,14 @@ class SATSolver:
         self.project = project
         self.pc = pc
         self.rtw = rtw
+        self.feature_assignment_choice = self.rtw.feature_assignment_choice
+        self.feature_assignment_open_choice = self.feature_assignment_choice.copy()
 
     def buildModel(self):
         self.solver = Solver()
         for item in self.feature_model:
             sentence = item[0] 
             self.solver.add(sentence)
-
-        # slicing FM, only for AxTLS
-        # if self.project == "axtls":
-        #     self.solver.add(Bool('CONFIG_PLATFORM_LINUX') == True)
-        #     self.solver.add(Bool('_WIN32_WCE') == False)
-        #     self.solver.add(Bool('WIN32') == False)
-        #     self.solver.add(Bool('__cplusplus') == False)
-
-        # elif self.project == "busybox-editors":
-        #     # for busybox editors
-        #     self.solver.add(Bool('ENABLE_FEATURE_VI_CRASHME') == False)
-        # elif self.project == "busybox-coreutils":
-        #     # for busybox coreutils
-        #     self.solver.add(Bool('VERSION_WITH_WRITEV') == False)
-        #     self.solver.add(Bool('ENABLE_LFS') == True)
-        #     self.solver.add(Bool('S_TYPEISTMO') == False)
         
     def runModelCheck(self):
         self.model = None
@@ -70,7 +56,6 @@ class SATSolver:
                 stat.inconsistencies.append(["   Source Code location:", src_location])
             requirement_ids = i_dict["Requirement ID"]
             requirement_sentences = i_dict["Requirement Sentence"]
-            #print(f"i_dict: {i_dict}")
             for i, req_id in enumerate(requirement_ids):
                 sentence = requirement_sentences[i]
                 req_id = self.verify_req_id(req_id, pc)
@@ -95,21 +80,15 @@ class SATSolver:
             for assignment in pc:
                 self.solver.add(assignment)
             status.append(self.runModelCheck())
-
-        #print(status)
         print("\nConsistency Checking:")
         count = 1
         inconsistencies_dict = {}
         if unsat in status:
             for i, s in enumerate(status):
-                #index = status.index(unsat)
                 if s == unsat:
                     key = str(presence_cond_assignments[i][0])
-                    #print(f"Presence Condition: {self.assignment2presence_cond[key]} is not consistent with Variability Model")
-                    #print(f"       Assignments: {presence_cond_assignments[i][0]}")
                     inconsistencies_dict[self.assignment2presence_cond[key]] = {"Assignments": presence_cond_assignments[i][0]}
                     count += 1
-                    #print(f"Source Code:")
                     previous_line = -1
                     first_sequential = True
                     code_strings = []
@@ -130,7 +109,6 @@ class SATSolver:
                     if len(code_strings) > 0:
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Source Code location"] = []
                     for string in code_strings:
-                        #print(f"       {string}")
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Source Code location"].append(string)
                     unsat_presence_conditions.append([i, presence_cond_assignments[i][0]])
         else:
@@ -148,7 +126,6 @@ class SATSolver:
         print()
         self.showInconsistencies(inconsistencies_dict)
         
-
     def findUnsatConflict(self, unsat_presence_conditions, assignment2presence_cond, inconsistencies_dict):
         for unsat in unsat_presence_conditions:
             sentence_check_list = []
@@ -194,19 +171,15 @@ class SATSolver:
                     solver_copy = Solver()
                     solver_copy.add(self.solver.assertions())
                     sentence = item[0]
-                    #self.solver.add(sentence)
-                    #if self.runModelCheck() != sat:
                     solver_copy.add(sentence)
                     if solver_copy.check() != sat:
-                        #print(f"Requirements: {item[1]}")
-                        #print(f"    Sentence: {sentence}")
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"].append(item[1])
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"].append(sentence)
-                        #break
             else:
                 print(f"\nPresence Condition: {assignment2presence_cond[key]} is Dead Code")
                 inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"] = []
                 inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"] = ["Dead Code"]
+
 
     def findMinConfigSet(self):
         # create check list and check all items with 'O'
@@ -214,7 +187,6 @@ class SATSolver:
         self.configs_pc = []
         for count in range(len(self.presenceConditionAssignments)):
             pc_check_list.append('O')
-            #print(self.presenceConditionAssignments[count])
 
         while 'O' in pc_check_list:
             self.buildModel()
@@ -228,6 +200,7 @@ class SATSolver:
                     self.solver.add(assignment)
                     push_pc.append(assignment)
                 push_count = len(pc)
+
                 if self.runModelCheck() == sat:
                     # check the item with 'S' to indicate the associated presence condition assignments are satisfied
                     pc_check_list[index] = 'S'
@@ -246,16 +219,13 @@ class SATSolver:
                         print("Error in backtracking")   
             # add the solution to the list
             self.configSet.append(self.model)
-            #print(f"\ncheck_list:\n   {pc_check_list}")
             self.configs_pc.append(config_pc)
             # revert back all 'X' item to 'O' and repeat the process
             while 'X' in pc_check_list:
                 index = pc_check_list.index('X')
                 pc_check_list[index] = 'O'
 
-
     def getMinConfigSet(self):
-        self.feature_not_in_code = []
         self.findMinConfigSet()
         self.config_table = {}
         config_numbers = len(self.configSet)
@@ -263,11 +233,7 @@ class SATSolver:
             for count, config in enumerate(self.configSet):
                 for feature in config:
                     feature_str = str(feature)
-                    #print(f"minset, feature: {feature_str}")
                     if feature_str not in self.code_features:
-                        #print(f"Min set: discard feature: {feature_str} (not in code)")
-                        if feature_str not in self.feature_not_in_code:
-                            self.feature_not_in_code.append(feature_str)
                         continue
                     if feature_str not in self.config_table:
                         if count == 0:   
