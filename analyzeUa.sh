@@ -23,7 +23,7 @@ echo "###########################################################"
 echo "Finding all python files in $code_path"
 find ./$code_path -name "*.py" > $file
 
-python3 analyzeVar.py --file $file --rtw_file $requirement --project "ua_app"
+python3 analyzeVar.py --file $file --rtw_file $requirement
 echo "Completed analysis."
 git add reports/*.csv && git commit -m "update $(date)" && git push origin main
 echo

@@ -66,7 +66,7 @@ class RTW_Node:
         print("   Requirements Traceability: {}".format(self.tracedReq))
             
 class RTW:
-    def __init__(self, filename, feature_map=None):
+    def __init__(self, filename):
         self.root = None
         self.solutions = []
         self.FM_XML = []
@@ -108,7 +108,7 @@ class RTW:
         # construct feature model in XML form - need RTW table, RTW nodes, RTW tree, RTW constraints 
         self.constructXMLFeatureModel()
         # export feature model to XML file - need feature model in XML form (represented by self.FM_XML)
-        self.exportFeatureModel2XML(self.root.name.replace('_','').replace('abstract', '') + "FeatureModel.xml")
+        self.exportFeatureModel2XML("FeatureModel.xml")
         self.support_features = self.get_support_features()
         
     # construct a single RTW entry

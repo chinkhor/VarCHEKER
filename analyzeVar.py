@@ -8,7 +8,7 @@ import subprocess
 import re
 
 
-def main(rtwFile, file, project):
+def main(rtwFile, file):
     start_time = time.time()
     print("\nGenerating feature model. Please wait...")
     rtw = RTW(rtwFile)
@@ -52,7 +52,7 @@ def main(rtwFile, file, project):
         command = f"rm {rm_file}"
         os.system(command)       
     cur_time = time.time()
-    sat_solver = SATSolver(rtw, pc, project=project)
+    sat_solver = SATSolver(rtw, pc)
     sat_solver.evalPresenceCondition(pc.assignment_list_weight, pc.assignment2presence_cond)
     pc_identify_analysis_time = round(time.time() - cur_time, 2)
     print(f"Total time for presence condition identification and analysis: {pc_identify_analysis_time} seconds")
@@ -63,23 +63,13 @@ def main(rtwFile, file, project):
     find_min_set_time = round(time.time() - cur_time, 2)
     print(f"\nTotal time for min configuration sets finding: {find_min_set_time} seconds")
     print(f"\nTotal time for variability analysis: {(time.time() - start_time):.2f} seconds")
-    pc.stat.printStat(project)
-    exit()
-    print(f"##########################")
-    print(f"Performance Analysis:")
-    print(f"  find var src code: {find_var_src_code_time} s")
-    print(f"  find presence condition and analysis: {find_pc_time + pc_identify_analysis_time} s")
-    print(f"  find min set time: {find_min_set_time} s")
-    print(f"##########################")
-    with open(f"var_perf_{project}.csv", "a") as f:
-        f.write(f"{find_var_src_code_time}, {find_pc_time + pc_identify_analysis_time}, {find_min_set_time}\n")
-
+    pc.stat.printStat()
+    
             
 if __name__=="__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Find Min Configuration Set for Max Line Coverage')
-    parser.add_argument('--rtw_file', metavar='RTW input file', required=True, type=str, nargs='+', help='RTW input file name')    
-    parser.add_argument('--file', metavar='file name for list of cpp files', required=True, help='file list for cpp files')
-    parser.add_argument('--project', metavar='project for analysis', type=str, required=True, help='project for analysis')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--rtw_file', metavar='Requirements CSV', required=True, type=str, nargs='+', help='Requirements CSV file name')    
+    parser.add_argument('--file', metavar='file list', required=True, help='file list for .py files')
     args = parser.parse_args()
-    main(rtwFile=args.rtw_file, file=args.file, project=args.project)
+    main(rtwFile=args.rtw_file, file=args.file)

@@ -2,7 +2,7 @@ from z3 import *
 import csv
 
 class SATSolver:    
-    def __init__(self, rtw, pc, project="axtls"):
+    def __init__(self, rtw, pc):
         self.feature_model = rtw.sat_formula
         self.model = None
         self.solver = None
@@ -11,7 +11,6 @@ class SATSolver:
         self.config_table = {}
         self.code_features = pc.features_dict
         self.assignment2presence_cond = {}
-        self.project = project
         self.pc = pc
         self.rtw = rtw
         self.feature_assignment_choice = self.rtw.feature_assignment_choice

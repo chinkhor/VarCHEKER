@@ -48,12 +48,12 @@ class VarCHEKStat:
         self.total_files = 0
         self.inconsistency_count = 0
 
-    def printStat(self, project):
+    def printStat(self):
         bmap = {True: "Yes", False: "No"}
         if self.requirements_code_consistent:
             if not (self.required_features_in_code == self.total_required_features == self.code_features_in_requirements):
                 self.requirements_code_consistent = False
-        stat_data = [['0_Statistics', project]]
+        stat_data = [['0_Statistics', 'Value']]
         stat_data.append(["Required Features in Source Code", self.required_features_in_code])
         stat_data.append(["Required Features NOT in Source Code",self.required_features_not_in_code])
         stat_data.append(["Total Required Features",self.total_required_features])
@@ -74,32 +74,32 @@ class VarCHEKStat:
         for item in stat_data:
             print(f"{item[0]:60s} {item[1]}")
         os.makedirs("reports", exist_ok=True)
-        with open(f'reports/stat_{project}.csv', 'w', newline='') as csvfile:
+        with open(f'reports/stat.csv', 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             csv_writer.writerows(stat_data)
 
         if len(self.required_features_not_in_code_list) > 0:
-            with open(f'reports/required_features_not_in_code_{project}.csv', 'w', newline='') as csvfile:
+            with open(f'reports/required_features_not_in_code.csv', 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerows(self.required_features_not_in_code_list)
     
         if len(self.code_features_not_in_requirements_list) > 0:
-            with open(f'reports/code_features_not_in_requirements_{project}.csv', 'w', newline='') as csvfile:
+            with open(f'reports/code_features_not_in_requirements.csv', 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerows(self.code_features_not_in_requirements_list)
      
         if len(self.presence_conditions_list) > 0: 
-            with open(f'reports/presence_condition_{project}.csv', 'w', newline='') as csvfile:
+            with open(f'reports/presence_condition.csv', 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerows(self.presence_conditions_list)
 
         if len(self.min_set_configurations) > 0:
-            with open(f'reports/min_set_{project}.csv', 'w', newline='') as csvfile:
+            with open(f'reports/min_set.csv', 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerows(self.min_set_configurations)
 
         if len(self.inconsistencies) > 0:
-            with open(f'reports/inconsistencies_{project}.csv', 'w', newline='') as csvfile:
+            with open(f'reports/inconsistencies.csv', 'w', newline='') as csvfile:
                 csv_writer = csv.writer(csvfile)
                 csv_writer.writerows(self.inconsistencies)
 

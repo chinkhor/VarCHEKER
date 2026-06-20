@@ -1,5 +1,0 @@
-1) Presence Condition:,rtsp && !rtsp
-   Assignments:,"[rtsp == True, rtsp == False]"
-   Source Code location:,"./ua-stereo-application-v3.0.0-test.1/runtime_setup/runtime_components_setup.py
-: 169"
-   Cause:,Dead Code
