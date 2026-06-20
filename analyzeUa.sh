@@ -1,5 +1,5 @@
 #!/bin/bash
-# make sure the dependencies of PCLocator are installed
+# install dependencies
 # sudo apt-get update
 # sudo apt-get install make
 # sudo apt-get install -y python3 python3-pip

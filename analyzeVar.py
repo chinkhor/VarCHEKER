@@ -1,10 +1,9 @@
 from RTW import RTW
-from PresenceCondition import PresenceCondition
-from PCLocator import extract_presence_conditions
+from PresenceCondition import PresenceCondition, getFileLines
+from PCExtractor import extract_presence_conditions
 from SATSolver import SATSolver
 import time
 import os
-from PresenceCondition import getFileLines
 import subprocess
 import re
 
@@ -16,6 +15,7 @@ def main(rtwFile, path, file, project):
     # rtw.showRTWTable()
     # rtw.showSATFormula()
     # rtw.showSupportedFeatures()
+    # rtw.showFeatureAssignmentChoice()
     print(f"Total time for feature model generation: {(time.time() - start_time):.2f} seconds")
 
     pc = PresenceCondition(path, file, rtw.support_features)
@@ -31,7 +31,7 @@ def main(rtwFile, path, file, project):
             extract_presence_conditions(code, rtw.support_features, output_file)
     print(f"Total files: {len(pc.src_list)}")
     find_pc_time = round(time.time() - cur_time, 2)
-    print(f"Total time for running PCLocator: {find_pc_time} seconds")
+    print(f"Total time for running PCExtractor: {find_pc_time} seconds")
     cur_time = time.time()
     print("\nAnalyzing presence conditions. Please wait...")
     pc.findPresenceConditions()
@@ -42,6 +42,8 @@ def main(rtwFile, path, file, project):
  
     pc.findFeaturesNotInFeatureModel()
     pc.findFeaturesInFeatureModel()
+    rtw.showFeaturesNotInCode(pc.features_dict, pc.stat)
+
     # print("Removing files: ")
     # for file in pc.src_list:
     #     file = file.strip()
@@ -49,8 +51,7 @@ def main(rtwFile, path, file, project):
     #     rm_file = file.strip().replace(ext, f"{ext}.txt")
     #     print(f"   {rm_file}")
     #     command = f"rm {rm_file}"
-    #         os.system(command)  
-         
+    #         os.system(command)       
     cur_time = time.time()
     sat_solver = SATSolver(rtw, pc, project=project)
     sat_solver.evalPresenceCondition(pc.assignment_list_weight, pc.assignment2presence_cond)
@@ -58,8 +59,6 @@ def main(rtwFile, path, file, project):
     print(f"Total time for presence condition identification and analysis: {pc_identify_analysis_time} seconds")
     
     sat_solver.getMinConfigSet()
-    #rtw.showFeaturesNotInCode(sat_solver.feature_not_in_code, pc.stat)
-    rtw.showFeaturesNotInCode(pc.features_dict, pc.stat)
     print("\nFinding min configuration sets. Please wait...")
     sat_solver.printConfigTable(rtw.support_features, pc.stat)
     find_min_set_time = round(time.time() - cur_time, 2)
