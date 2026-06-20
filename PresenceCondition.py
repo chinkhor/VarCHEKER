@@ -46,14 +46,13 @@ class VarCHEKStat:
         self.min_set_configurations = []
         self.inconsistencies = []
         self.total_files = 0
+        self.inconsistency_count = 0
 
     def printStat(self, project):
         bmap = {True: "Yes", False: "No"}
         if self.requirements_code_consistent:
             if not (self.required_features_in_code == self.total_required_features == self.code_features_in_requirements):
                 self.requirements_code_consistent = False
-        #print(f"Are Variability Requirements and Source Code Consistent? {bmap[self.requirements_code_consistent]}")
-
         stat_data = [['0_Statistics', project]]
         stat_data.append(["Required Features in Source Code", self.required_features_in_code])
         stat_data.append(["Required Features NOT in Source Code",self.required_features_not_in_code])
@@ -65,9 +64,12 @@ class VarCHEKStat:
         stat_data.append(["Total Features in Source Code",self.total_code_features])
         stat_data.append(["Total Presence Conditions in Source Code",self.total_presence_conditions])
         stat_data.append(["Implemented Lines NOT Specified by Requirements",self.implemented_lines_not_in_requirements])
-        stat_data.append(["Total variability lines of code",self.var_loc])
-        stat_data.append(["Total lines of code",self.loc])
-        stat_data.append(["Total files",self.total_files])
+        stat_data.append(["Total Variability Lines of Code",self.var_loc])
+        stat_data.append(["Total Lines of Code Analyzed",self.loc])
+        stat_data.append(["Total Files Processed",self.total_files])
+        cfg_count = len(self.min_set_configurations[0]) - 1
+        stat_data.append(["Total Minimal Set of Configurations",cfg_count])
+        stat_data.append(["Total Identified Inconsistencies",self.inconsistency_count])
         stat_data.append(["Are Variability Requirements and Source Code Consistent?",bmap[self.requirements_code_consistent]])
         for item in stat_data:
             print(f"{item[0]:60s} {item[1]}")
@@ -186,7 +188,6 @@ class PresenceCondition:
                 elif filename.strip() not in self.features_dict[feature]:
                     self.features_dict[feature].append(filename.strip())   
         return pc
-
 
     def parsePC(self, filename):
         file = filename.strip()

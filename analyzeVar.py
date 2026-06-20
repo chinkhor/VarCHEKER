@@ -44,7 +44,7 @@ def main(rtwFile, file, project):
     pc.findFeaturesInFeatureModel()
     rtw.showFeaturesNotInCode(pc.features_dict, pc.stat)
 
-    print("Removing files: ")
+    # remove the generated files for parsing
     for file in pc.src_list:
         file = file.strip()
         ext = ".py"

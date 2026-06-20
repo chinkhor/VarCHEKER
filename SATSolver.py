@@ -16,6 +16,7 @@ class SATSolver:
         self.rtw = rtw
         self.feature_assignment_choice = self.rtw.feature_assignment_choice
         self.feature_assignment_open_choice = self.feature_assignment_choice.copy()
+        self.inconsistency_count = 0
 
     def buildModel(self):
         self.solver = Solver()
@@ -47,6 +48,7 @@ class SATSolver:
 
     def showInconsistencies(self, inconsistencies_dict):
         stat = self.pc.stat
+        stat.inconsistency_count = len(inconsistencies_dict)
         for i, pc in enumerate(inconsistencies_dict):
             i_dict = inconsistencies_dict[pc]
             stat.inconsistencies.append([f"{i+1}) Presence Condition:", pc])
@@ -81,14 +83,12 @@ class SATSolver:
                 self.solver.add(assignment)
             status.append(self.runModelCheck())
         print("\nConsistency Checking:")
-        count = 1
         inconsistencies_dict = {}
         if unsat in status:
             for i, s in enumerate(status):
                 if s == unsat:
                     key = str(presence_cond_assignments[i][0])
                     inconsistencies_dict[self.assignment2presence_cond[key]] = {"Assignments": presence_cond_assignments[i][0]}
-                    count += 1
                     previous_line = -1
                     first_sequential = True
                     code_strings = []
