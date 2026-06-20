@@ -1,0 +1,30 @@
+01_Required Features,Associated Requirement(s)
+sharpen_image,['UA-1.1.2.2']
+sharpness_score,['UA-1.1.3']
+force,['UA-1.1.5.3']
+packetDelay,['UA-1.1.7']
+auto_exposure,['UA-1.1.8']
+camReset,['UA-1.1.9']
+time_profile,['UA-1.1.10']
+white_balance_algo,"['UA-1.1.12', 'UA-1.1.12.1']"
+camera_profile,"['UA-1.1.13', 'UA-1.1.13.1']"
+getRawImages,"['UA-1.2', 'UA-1.2.8.1', 'UA-1.2.8.2', 'UA-7.2.6']"
+getRawUndetectedBalls,"['UA-1.2', 'UA-1.2.7.1', 'UA-1.2.7.2', 'UA-7.2.7']"
+full_frame,"['UA-1.2.5.1', 'UA-1.2.14.1', 'UA-1.2.14.2']"
+expand_view,['UA-1.2.5.2']
+show_batter,"['UA-1.2.5.3.1', 'UA-1.2.11']"
+ignore_swings,['UA-1.2.5.3.6']
+show_full_frames,"['UA-1.2.5.5', 'UA-1.2.13.1', 'UA-1.2.13.2']"
+play_frame_by_frame,"['UA-1.2.5.6', 'UA-1.2.15.1', 'UA-1.2.15.2']"
+collect_bat_data,['UA-1.2.5.7']
+collect_ball_data,['UA-1.2.5.8']
+apply_drifts,['UA-1.2.5.11']
+player_age,"['UA-1.2.5.12', 'UA-1.2.5.12.1']"
+player_gender,"['UA-1.2.5.13', 'UA-1.2.5.13.1']"
+ball_detect_zoom,['UA-1.2.5.15']
+send_call,"['UA-1.2.16', 'UA-13']"
+unencoded,['UA-7.1']
+show_marker,['UA-12']
+capturer,['UA-15']
+update_configs,['UA-16']
+validate_bboxes,['UA-18.1']
