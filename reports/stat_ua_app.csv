@@ -9,7 +9,9 @@ Features in Source Code NOT Specified in Requirements,1
 Total Features in Source Code,44
 Total Presence Conditions in Source Code,80
 Implemented Lines NOT Specified by Requirements,13
-Total variability lines of code,773
-Total lines of code,27732
-Total files,157
+Total Variability Lines of Code,773
+Total Lines of Code Analyzed,27732
+Total Files Processed,157
+Total Minimal Set of Configurations,7
+Total Identified Inconsistencies,157
 Are Variability Requirements and Source Code Consistent?,No
