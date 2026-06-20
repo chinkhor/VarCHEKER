@@ -8,7 +8,7 @@ import subprocess
 import re
 
 
-def main(rtwFile, path, file, project):
+def main(rtwFile, file, project):
     start_time = time.time()
     print("\nGenerating feature model. Please wait...")
     rtw = RTW(rtwFile)
@@ -18,14 +18,14 @@ def main(rtwFile, path, file, project):
     # rtw.showFeatureAssignmentChoice()
     print(f"Total time for feature model generation: {(time.time() - start_time):.2f} seconds")
 
-    pc = PresenceCondition(path, file, rtw.support_features)
+    pc = PresenceCondition(file, rtw.support_features)
     cur_time = time.time()
     pc.src_list = getFileLines(pc.src_list_file)
     for file in pc.src_list:
         input_file = file.strip()
         ext = ".py"
         output_file = file.strip().replace(ext, f"{ext}.txt")
-        print(f"   {input_file}")
+        #print(f"   {input_file}")
         with open(input_file, "r") as f:
             code = f.read()
             extract_presence_conditions(code, rtw.support_features, output_file)
@@ -44,14 +44,13 @@ def main(rtwFile, path, file, project):
     pc.findFeaturesInFeatureModel()
     rtw.showFeaturesNotInCode(pc.features_dict, pc.stat)
 
-    # print("Removing files: ")
-    # for file in pc.src_list:
-    #     file = file.strip()
-    #     ext = ".py"
-    #     rm_file = file.strip().replace(ext, f"{ext}.txt")
-    #     print(f"   {rm_file}")
-    #     command = f"rm {rm_file}"
-    #         os.system(command)       
+    print("Removing files: ")
+    for file in pc.src_list:
+        file = file.strip()
+        ext = ".py"
+        rm_file = file.strip().replace(ext, f"{ext}.txt")
+        command = f"rm {rm_file}"
+        os.system(command)       
     cur_time = time.time()
     sat_solver = SATSolver(rtw, pc, project=project)
     sat_solver.evalPresenceCondition(pc.assignment_list_weight, pc.assignment2presence_cond)
@@ -73,15 +72,14 @@ def main(rtwFile, path, file, project):
     print(f"  find min set time: {find_min_set_time} s")
     print(f"##########################")
     with open(f"var_perf_{project}.csv", "a") as f:
-    	f.write(f"{find_var_src_code_time}, {find_pc_time + pc_identify_analysis_time}, {find_min_set_time}\n")
+        f.write(f"{find_var_src_code_time}, {find_pc_time + pc_identify_analysis_time}, {find_min_set_time}\n")
 
             
 if __name__=="__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Find Min Configuration Set for Max Line Coverage')
     parser.add_argument('--rtw_file', metavar='RTW input file', required=True, type=str, nargs='+', help='RTW input file name')    
-    parser.add_argument('--path', metavar='path to file list for cpp files', required=True, help='path to file list for cpp files')
     parser.add_argument('--file', metavar='file name for list of cpp files', required=True, help='file list for cpp files')
     parser.add_argument('--project', metavar='project for analysis', type=str, required=True, help='project for analysis')
     args = parser.parse_args()
-    main(rtwFile=args.rtw_file, path=args.path, file=args.file, project=args.project)
+    main(rtwFile=args.rtw_file, file=args.file, project=args.project)

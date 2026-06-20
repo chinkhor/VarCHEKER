@@ -71,6 +71,7 @@ class VarCHEKStat:
         stat_data.append(["Are Variability Requirements and Source Code Consistent?",bmap[self.requirements_code_consistent]])
         for item in stat_data:
             print(f"{item[0]:60s} {item[1]}")
+        os.makedirs("reports", exist_ok=True)
         with open(f'reports/stat_{project}.csv', 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             csv_writer.writerows(stat_data)
@@ -101,11 +102,8 @@ class VarCHEKStat:
                 csv_writer.writerows(self.inconsistencies)
 
 class PresenceCondition:    
-    def __init__(self, path, filename, required_features):
-        self.ifnames_file = path + "/ifnames"
-        self.path = path
-        self.src_list_file = path + '/' + filename
-        self.var_list_file = path + "/var_list_file"
+    def __init__(self, filename, required_features):
+        self.src_list_file = filename
         self.src_list = []
         self.assignment_list = []
         self.assignment_list_weight = []

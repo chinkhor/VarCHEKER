@@ -1,6 +1,7 @@
 from itertools import combinations
 from z3 import *
 import pandas as pd
+import os
 
 class RTW_Entry:    
     def __init__(self):
@@ -392,6 +393,7 @@ class RTW:
       
     # export the feature model to XML file
     def exportFeatureModel2XML(self, filename):
+        os.makedirs("feature_model", exist_ok=True)
         with open(f"feature_model/{filename}", 'w') as f:
             for line in self.FM_XML:
                 f.write(line)

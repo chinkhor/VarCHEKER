@@ -8,20 +8,22 @@
 # sudo apt-get install python3-z3
 # sudo apt-get install python3-sympy
 
-dir="ua_data"
-file="src_list_file"
-if ! [[ -d $dir ]]; then
-    mkdir $dir
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <requirement in csv> <Python code path>"
+    exit 1
 fi
-ua_dir="ua_app"
+
+requirement="$1"
+code_path="$2"
+file="src_list.txt"
 
 # find all python files and generate file list
 echo
 echo "###########################################################"
-echo "Finding all python files in ua_app"
-find ./$ua_dir -name "*.py" > $dir/$file
+echo "Finding all python files in $code_path"
+find ./$code_path -name "*.py" > $file
 
-python3 analyzeVar.py --path $dir --file $file  --rtw_file requirements/RTW_ua.csv --project "ua_app"
+python3 analyzeVar.py --file $file --rtw_file $requirement --project "ua_app"
 echo "Completed analysis."
 git add reports/*.csv && git commit -m "update $(date)" && git push origin main
 echo
