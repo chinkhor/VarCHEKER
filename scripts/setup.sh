@@ -2,7 +2,7 @@
 # install dependencies
 sudo apt-get update
 sudo apt-get install -y python3 python3-pip
-sudo apt-get install -y python3-z3
-sudo apt-get install -y python3-sympy
-sudo apt-get install -y python3-pandas
+sudo pip3 install sympy==1.14.0
+sudo pip3 install z3-solver==4.13.0.0
+sudo pip3 install pandas==2.2.2
 
