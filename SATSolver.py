@@ -45,9 +45,11 @@ class SATSolver:
                 new_req_ids.append(req_id)
         return new_req_ids
 
+
     def showInconsistencies(self, inconsistencies_dict):
         stat = self.pc.stat
         stat.inconsistency_count = len(inconsistencies_dict)
+        stat.inconsistencies = [['Field', 'Value']]
         for i, pc in enumerate(inconsistencies_dict):
             i_dict = inconsistencies_dict[pc]
             stat.inconsistencies.append([f"{i+1}) Presence Condition:", pc])
@@ -60,12 +62,13 @@ class SATSolver:
             for i, req_id in enumerate(requirement_ids):
                 sentence = requirement_sentences[i]
                 req_id = self.verify_req_id(req_id, pc)
+                stat.inconsistencies.append(["   Inconsistency Type:", "Requirement Conflict"])
                 stat.inconsistencies.append(["   Conflicted Requirement ID:", req_id])
                 stat.inconsistencies.append(["   Conflicted Requirement Sentence:", sentence])
             if "Dead Code" in str(i_dict["Requirement Sentence"]):
-                stat.inconsistencies.append(["   Cause:", "Dead Code"])
-        print()
-        for item in stat.inconsistencies:
+                stat.inconsistencies.append(["   Inconsistency Type:", "Dead Code"])
+
+        for item in stat.inconsistencies[1:]:
             print(item)
         print()
 

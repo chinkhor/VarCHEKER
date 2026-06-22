@@ -413,8 +413,7 @@ class PresenceCondition:
         x = self.feature_not_in_code_coverage
         self.feature_not_in_code_coverage = dict(sorted(x.items(), key=lambda item: item[1],reverse=True))
         total_lines = 0
-        if len(self.feature_not_in_code_coverage) > 0:
-            self.stat.code_features_not_in_requirements_list.append(["01_Features in Source Code", "Code Lines by Feature (coverage)", "Location"])
+        self.stat.code_features_not_in_requirements_list.append(["01_Features in Source Code", "Code Lines by Feature (coverage)", "Location"])
         for feature in self.feature_not_in_code_coverage:
             lines, location = self.feature_not_in_code_coverage[feature]
             coverage = round(lines*100/self.var_total_lines, 2)

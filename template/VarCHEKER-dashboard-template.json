@@ -2,7 +2,7 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "varcheker"
+    "name": "VarCHEKER"
   },
   "spec": {
     "annotations": [
@@ -59,7 +59,7 @@
                         "root_selector": "",
                         "source": "url",
                         "type": "csv",
-                        "url": "my-repo-url/presence_condition.csv",
+                        "url": "https://github.com/chinkhor/VarCHEKER-reports/blob/main/presence_condition.csv",
                         "url_options": {
                           "data": "",
                           "method": "GET"
@@ -78,7 +78,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "13.1.0-26564065169",
+            "version": "13.1.0-27822252871",
             "spec": {
               "options": {
                 "cellHeight": "sm",
@@ -213,7 +213,7 @@
                         "root_selector": "",
                         "source": "url",
                         "type": "csv",
-                        "url": "my-repo-url/min_set.csv",
+                        "url": "https://github.com/chinkhor/VarCHEKER-reports/blob/main/min_set.csv",
                         "url_options": {
                           "data": "",
                           "method": "GET"
@@ -232,7 +232,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "13.1.0-26564065169",
+            "version": "13.1.0-27822252871",
             "spec": {
               "options": {
                 "cellHeight": "sm",
@@ -340,7 +340,7 @@
                         "root_selector": "",
                         "source": "url",
                         "type": "csv",
-                        "url": "my-repo-url/stat.csv",
+                        "url": "https://github.com/chinkhor/VarCHEKER-reports/blob/main/stat.csv",
                         "url_options": {
                           "data": "",
                           "method": "GET"
@@ -359,7 +359,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "13.1.0-26564065169",
+            "version": "13.1.0-27822252871",
             "spec": {
               "options": {
                 "cellHeight": "sm",
@@ -464,7 +464,7 @@
                         "root_selector": "",
                         "source": "url",
                         "type": "csv",
-                        "url": "my-repo-url/required_features_not_in_code.csv",
+                        "url": "https://github.com/chinkhor/VarCHEKER-reports/blob/main/required_features_not_in_code.csv",
                         "url_options": {
                           "data": "",
                           "method": "GET"
@@ -483,7 +483,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "13.1.0-26564065169",
+            "version": "13.1.0-27822252871",
             "spec": {
               "options": {
                 "cellHeight": "sm",
@@ -570,7 +570,7 @@
                         "root_selector": "",
                         "source": "url",
                         "type": "csv",
-                        "url": "my-repo-url/code_features_not_in_requirements.csv",
+                        "url": "https://github.com/chinkhor/VarCHEKER-reports/blob/main/code_features_not_in_requirements.csv",
                         "url_options": {
                           "data": "",
                           "method": "GET"
@@ -589,7 +589,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "13.1.0-26564065169",
+            "version": "13.1.0-27822252871",
             "spec": {
               "options": {
                 "cellHeight": "sm",
@@ -701,7 +701,7 @@
                         "root_selector": "",
                         "source": "url",
                         "type": "csv",
-                        "url": "my-repo-url/inconsistencies.csv",
+                        "url": "https://github.com/chinkhor/VarCHEKER-reports/blob/main/inconsistencies.csv",
                         "url_options": {
                           "data": "",
                           "method": "GET"
@@ -720,7 +720,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "13.1.0-26564065169",
+            "version": "13.1.0-27822252871",
             "spec": {
               "options": {
                 "cellHeight": "sm",

@@ -1,9 +1,4 @@
 #!/bin/bash
-# install dependencies
-sudo apt-get update
-sudo apt-get install -y python3 python3-pip
-sudo apt-get install python3-z3
-sudo apt-get install python3-sympy
 
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <requiremient in csv> <Python code path>"
@@ -22,7 +17,4 @@ find ./$code_path -name "*.py" > $file
 
 python3 analyzeVar.py --file $file --rtw_file $requirement
 echo "Completed analysis."
-#git add reports/*.csv && git commit -m "update $(date)" && git push origin main
-#echo
-#echo "Updated repository."
-#echo "###########################################################"
+echo "###########################################################"
