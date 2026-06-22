@@ -1,0 +1,1 @@
+[VarCHEKER Dashboard](https://chinkhor.grafana.net/dashboard/snapshot/i4HBnjLNTVO33QxfwFO4nAodYCb6BrV7)
