@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<featureModel>
+	<properties>
+		<graphics key="autolayoutconstraints" value="false"/>
+		<graphics key="legendposition" value="1223,200"/>
+		<graphics key="legendautolayout" value="false"/>
+		<graphics key="showconstraints" value="true"/>
+		<graphics key="showshortnames" value="false"/>
+		<graphics key="layout" value="horizontal"/>
+		<graphics key="showcollapsedconstraints" value="true"/>
+		<graphics key="legendhidden" value="false"/>
+		<graphics key="layoutalgorithm" value="1"/>
+	</properties>
+	<struct>
+		<and abstract="true" mandatory="true" name="abstract_car_app">
+		<description>Requirements: ['ID-1', 'ID-2', 'ID-3', 'ID-4', 'ID-5']</description>
+		<alt abstract="true" mandatory="true" name="abstract_transmission">
+		<description>Requirements: ['ID-1', 'ID-6']</description>
+			<feature name="transmission==automatic">
+			<description>Requirements: ['ID-6', 'ID-9']</description>
+			</feature>
+			<feature name="transmission==manual">
+			<description>Requirements: ['ID-6']</description>
+			</feature>
+		</alt>
+		<alt abstract="true" mandatory="true" name="abstract_engine">
+		<description>Requirements: ['ID-2', 'ID-7']</description>
+			<feature name="engine==petrol">
+			<description>Requirements: ['ID-7']</description>
+			</feature>
+			<feature name="engine==electric">
+			<description>Requirements: ['ID-7']</description>
+			</feature>
+			<feature name="engine==hybrid">
+			<description>Requirements: ['ID-7']</description>
+			</feature>
+		</alt>
+			<feature name="sunroof">
+			<description>Requirements: ['ID-3', 'ID-9']</description>
+			</feature>
+		<alt abstract="true" mandatory="true" name="abstract_color">
+		<description>Requirements: ['ID-4', 'ID-8']</description>
+			<feature name="color==black">
+			<description>Requirements: ['ID-8']</description>
+			</feature>
+			<feature name="color==red">
+			<description>Requirements: ['ID-8']</description>
+			</feature>
+			<feature name="color==white">
+			<description>Requirements: ['ID-8']</description>
+			</feature>
+			<feature name="color==silver">
+			<description>Requirements: ['ID-8']</description>
+			</feature>
+		</alt>
+			<feature name="spoiler">
+			<description>Requirements: ['ID-5']</description>
+			</feature>
+		</and>
+	</struct>
+	<constraints>
+		<rule>
+		<description>Constraint Requirement: ID-9</description>
+			<imp>
+				<var>transmission==automatic</var>
+				<var>sunroof</var>
+			</imp>
+		</rule>
+	</constraints>
+</featureModel>

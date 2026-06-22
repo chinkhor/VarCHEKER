@@ -1,0 +1,5 @@
+01_Feature,cfg1,cfg2,cfg3,cfg4
+transmission,"""automatic""","""manual""","""manual""","""manual"""
+sunroof,True,False,False,False
+color,"""silver""","""black""","""red""","""white"""
+engine,"""petrol""","""hybrid""","""electric""","""hybrid"""
