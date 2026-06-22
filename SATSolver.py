@@ -62,7 +62,7 @@ class SATSolver:
                 req_id = self.verify_req_id(req_id, pc)
                 stat.inconsistencies.append(["   Conflicted Requirement ID:", req_id])
                 stat.inconsistencies.append(["   Conflicted Requirement Sentence:", sentence])
-            if "Dead Code" in i_dict["Requirement Sentence"]:
+            if "Dead Code" in str(i_dict["Requirement Sentence"]):
                 stat.inconsistencies.append(["   Cause:", "Dead Code"])
         print()
         for item in stat.inconsistencies:
@@ -80,7 +80,8 @@ class SATSolver:
             self.buildModel()
             for assignment in pc:
                 self.solver.add(assignment)
-            status.append(self.runModelCheck())
+            s = self.runModelCheck()
+            status.append(s)
         print("\nConsistency Checking:")
         inconsistencies_dict = {}
         if unsat in status:
@@ -120,7 +121,7 @@ class SATSolver:
         while i >= 0:
             # remove unsat presence condition
             index = unsat_presence_conditions[i][0]
-            print(f"Remove 'unsat' presence condition assignments: {self.presenceConditionAssignments.pop(index)}")
+            self.presenceConditionAssignments.pop(index)
             i -= 1    
         print()
         self.showInconsistencies(inconsistencies_dict)
@@ -162,7 +163,6 @@ class SATSolver:
                 self.solver.add(assignments)
 
             if self.runModelCheck() == sat:
-                print(f"\nPresence Condition: {assignment2presence_cond[key]} is conflicted with")
                 if len(sentence_check_list) > 0:
                     inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"] = []
                     inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"] = []
@@ -175,7 +175,7 @@ class SATSolver:
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"].append(item[1])
                         inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"].append(sentence)
             else:
-                print(f"\nPresence Condition: {assignment2presence_cond[key]} is Dead Code")
+                #print(f"\nPresence Condition: {assignment2presence_cond[key]} is Dead Code")
                 inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement ID"] = []
                 inconsistencies_dict[self.assignment2presence_cond[key]]["Requirement Sentence"] = ["Dead Code"]
 
@@ -238,16 +238,16 @@ class SATSolver:
                         if count == 0:   
                             self.config_table[feature_str] = [str(config[feature])]
                         else:
-                            self.config_table[feature_str] = ['any'] * count
+                            self.config_table[feature_str] = ['False'] * count
                             self.config_table[feature_str].append(str(config[feature]))
                     else:
                         for i in range(len(self.config_table[feature_str]), count):
-                            self.config_table[feature_str].append('any')
+                            self.config_table[feature_str].append('False')
                         self.config_table[feature_str].append(str(config[feature]))  
             for feature in self.config_table:
                 settings = self.config_table[feature]
                 for i in range(len(settings), config_numbers):
-                    self.config_table[feature].append('any')    
+                    self.config_table[feature].append('False')    
 
     def printConfigTable(self, support_features, stat):
         if len(self.configSet) > 0:

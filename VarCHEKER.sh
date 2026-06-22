@@ -1,12 +1,9 @@
 #!/bin/bash
 # install dependencies
-#sudo apt-get update
-#sudo apt-get install make
-#sudo apt-get install -y python3 python3-pip
-#sudo apt-get --yes --force-yes install autoconf
-#sudo apt-get --yes --force-yes install default-jre
-#sudo apt-get install python3-z3
-#sudo apt-get install python3-sympy
+sudo apt-get update
+sudo apt-get install -y python3 python3-pip
+sudo apt-get install python3-z3
+sudo apt-get install python3-sympy
 
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <requiremient in csv> <Python code path>"

@@ -274,7 +274,19 @@ class PresenceCondition:
 
     def convert2DNF(self, pc):
         feature_list = {}
+
         formula = parse_expr(pc, evaluate=False)
+        if formula == False:
+            if '&' in pc:
+                sub_formula = pc.split('&')
+                exprs = []
+                for sf in sub_formula:
+                    expr = parse_expr(sf.strip(), evaluate=False)
+                    exprs.append(expr)
+                formula = And._from_args(frozenset(exprs))
+                return formula
+            else:
+                raise Exception("Unsupported pattern. FIX IT")
         dnf_formula = to_dnf(formula, simplify=False)
         dnf_min = simplify_logic(dnf_formula, form='dnf', force=True)
         return dnf_min
@@ -352,7 +364,6 @@ class PresenceCondition:
             pc = pc.replace("!", "~")
             pc = pc.replace("_NOT_EQUAL_", "!=")
             dnf = self.convert2DNF(pc)
-
             sentences = str(dnf).split(' | ')
             for sentence in sentences:
                 assignment = self._getAssignments(sentence.strip())

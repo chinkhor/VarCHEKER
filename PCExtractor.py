@@ -160,6 +160,8 @@ class PresenceConditionVisitor(ast.NodeVisitor):
         - 'X is None' -> 'not X'
         - 'X is not None' -> 'X'
         - 'not(not X)' -> 'X'
+        - 'X in [A, B]' -> 'X == A or X == B'
+        - 'X not in [A, B]' -> 'X != A and X != B'
         """
         # Handle logical combinations like 'and' / 'or'
         if isinstance(node, ast.BoolOp):
@@ -184,7 +186,29 @@ class PresenceConditionVisitor(ast.NodeVisitor):
             if len(node.ops) == 1 and len(node.comparators) == 1:
                 op = node.ops[0]
                 comparator = node.comparators[0]
-                
+
+                # Converts: feature in ["optionA", "optionB"] 
+                # Into:     feature == "optionA" or feature == "optionB"
+                # and
+                # Converts: feature not in ["optionA", "optionB"] 
+                # Into:     feature != "optionA" and feature != "optionB"               
+                if isinstance(op, (ast.In, ast.NotIn)) and isinstance(comparator, (ast.List, ast.Tuple)):
+                    if isinstance(op, ast.In):
+                        # X in [A, B]  ->  X == A or X == B
+                        inner_ops = [
+                            ast.Compare(left=node.left, ops=[ast.Eq()], comparators=[elt])
+                            for elt in comparator.elts
+                        ]
+                        bool_node = ast.BoolOp(op=ast.Or(), values=inner_ops)
+                    else:
+                        # X not in [A, B]  ->  X != A and X != B
+                        inner_ops = [
+                            ast.Compare(left=node.left, ops=[ast.NotEq()], comparators=[elt])
+                            for elt in comparator.elts
+                        ]
+                        bool_node = ast.BoolOp(op=ast.And(), values=inner_ops) 
+                    return self.parse_if_condition(bool_node)
+
                 if isinstance(comparator, ast.Constant):
                     val = comparator.value
                     
