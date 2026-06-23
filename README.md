@@ -2,6 +2,8 @@
 
 VarCHEKER analyzes variability requirements and Python source code to detect inconsistencies and generate test configurations for use in variability testing. User can setup to show the results through a real-time Grafana dashboard. Additionally, VarCHEKER generates feature model that can be inspected and visualized using FeatureIDE.
 
+VarCHEKER is being used/evaluated in a company, and the data used in that evaluation is proprietary. Our repository thus contains sample data (the requirements and source code) in `sample` folder,  and  VarCHEKER’s analysis results (in `reports` folder) on that data, for demonstration and replication purposes.
+
 ## Setup and Installation
 
 1. Download [VarCHEKER-v1.0.0](https://github.com/chinkhor/VarCHEKER/releases/tag/v1.0.0)
@@ -18,7 +20,7 @@ e.g.
 ./VarCHEKER.sh sample/sample_requirements.csv sample/sample_app
 ```
 note: 
-* sample requirements (`sample/sample_requirements.csv`) and sample Python application (`sample/sample_app/sample.py`) are provided for demonstration
+* sample requirements (`sample/sample_requirements.csv`) and sample Python application (`sample/sample_app/sample.py`) are provided for demonstration purpose.
 
 2. VarCHEKER results will be printed in terminal console
 3. VarCHEKER will generate the following artifacts:
@@ -73,6 +75,8 @@ Features that are not directly configurable in the source code are prefixed with
 4. Create new FeatureIDE project
 5. Right click model.xml of new FeatureIDE project, select FeatureIDE and import Feature Model
 6. Import model from `feature_model/FeatureModel.xml`
+7. Example: 
+![alt text](images/image-4.png)
 
 ## Demo
 
