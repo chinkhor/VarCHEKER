@@ -619,12 +619,10 @@ class RTW:
         total_features_not_in_code = 0
         req_not_covered = []
         print("\nRequired Features NOT in source code:")
+        stat.required_features_not_in_code_list.append(["01_Required Features", "Associated Requirement(s)"])
         for feature in self.support_features:
             if feature in features_in_code:
                 continue
-            if total_features_not_in_code == 0:
-                stat.required_features_not_in_code_list.append(["01_Required Features", "Associated Requirement(s)"])
-
             for feature_str in self.features:
                 if feature in feature_str:
                     feature_node = self.features[feature_str]

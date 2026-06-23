@@ -1,5 +1,5 @@
 01_Feature,cfg1,cfg2,cfg3,cfg4
-transmission,"""manual""","""automatic""","""manual""","""manual"""
+clutch,True,False,True,False
+engine,"""petrol""","""hybrid""","""electric""","""petrol"""
 color,"""silver""","""black""","""red""","""white"""
-engine,"""petrol""","""hybrid""","""electric""","""electric"""
-clutch,True,False,True,True
+transmission,"""manual""","""automatic""","""manual""","""automatic"""

@@ -7,7 +7,7 @@ VarCHEKER is being used/evaluated in a company, and the data used in that evalua
 ## Setup and Installation
 
 1. Download [VarCHEKER-v1.0.0](https://github.com/chinkhor/VarCHEKER/releases/tag/v1.0.0)
-2. Run `./scripts/setup.sh` at terminal to install dependencies
+2. Run `source scripts/setup.sh` at terminal to create Python Virtual Environment and install dependencies
 
 ## Usage
 

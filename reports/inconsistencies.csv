@@ -1,10 +1,5 @@
 Field,Value
-1) Presence Condition:,(!((color == white) || (color == red))) && (color != black) && (color == black)
-   Assignments:,"[color == ""white"", color != ""black"", color == ""black""]"
-   Source Code location:,"./sample/sample_app/sample_code.py
-: 45"
-   Inconsistency Type:,Dead Code
-2) Presence Condition:,clutch && (transmission == automatic)
+1) Presence Condition:,clutch && (transmission == automatic)
    Assignments:,"[clutch == True, transmission == ""automatic""]"
    Source Code location:,"./sample/sample_app/sample_code.py
 : 33"
