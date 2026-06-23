@@ -34,7 +34,7 @@ note:
 
 1. Start with requirements template provided in `template/RTW_template.csv`
 2. The user requires to enter the following five fields for each variability requirement (CSV format)
-![alt text](image-2.png)
+![alt text](images/image-1.png)
     - Requirement ID: unique ID
     - Valid: control the requirement inclusion/exclusion 
         - 1 : valid
@@ -42,9 +42,9 @@ note:
     - Parent Feature: feature name for parent feature
     - Children Feature(s): feature name for one or more children features
     - Rule: relationship rules for Parent-Children and Cross-Tree Constraints (see figure below)
-![alt text](image.png)
+![alt text](images/image-2.png)
 3. Examples:
-![alt text](image-5.png)
+![alt text](images/image-3.png)
 Features that are not directly configurable in the source code are prefixed with `abstract_` to improve grouping and readability. We refer to these as `abstract features`.
     - ID-1: the feature `car` is root, rule is R1. 
         - The feature `car` is an abstract feature, and is represented with the `abstract_` prefix as `abstract_car`.
