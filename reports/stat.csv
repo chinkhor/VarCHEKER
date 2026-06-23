@@ -7,10 +7,10 @@ Total Textual Requirements,10
 Features in Source Code Specified in Requirements,4
 Features in Source Code NOT Specified in Requirements,0
 Total Features in Source Code,4
-Total Presence Conditions in Source Code,12
+Total Presence Conditions in Source Code,14
 Implemented Lines NOT Specified by Requirements,0
-Total Variability Lines of Code,16
-Total Lines of Code Analyzed,53
+Total Variability Lines of Code,19
+Total Lines of Code Analyzed,60
 Total Files Processed,1
 Total Minimal Set of Configurations,4
 Total Identified Inconsistencies,2

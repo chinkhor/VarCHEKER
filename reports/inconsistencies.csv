@@ -1,13 +1,13 @@
 Field,Value
 1) Presence Condition:,(!((color == white) || (color == red))) && (color != black) && (color == black)
-   Assignments:,"[color == ""black"", color != ""black"", ~color == ""red""]"
-   Source Code location:,"./sample_app/car_app.py
-: 38"
+   Assignments:,"[color == ""white"", color != ""black"", color == ""black""]"
+   Source Code location:,"./sample/sample_app/sample_code.py
+: 45"
    Inconsistency Type:,Dead Code
-2) Presence Condition:,(transmission == automatic) && !sunroof
-   Assignments:,"[sunroof == False, transmission == ""automatic""]"
-   Source Code location:,"./sample_app/car_app.py
-: 18"
+2) Presence Condition:,clutch && (transmission == automatic)
+   Assignments:,"[clutch == True, transmission == ""automatic""]"
+   Source Code location:,"./sample/sample_app/sample_code.py
+: 33"
    Inconsistency Type:,Requirement Conflict
-   Conflicted Requirement ID:,['ID-9']
-   Conflicted Requirement Sentence:,"Implies(transmission == ""automatic"", sunroof)"
+   Conflicted Requirement ID:,['ID-4']
+   Conflicted Requirement Sentence:,"Implies(clutch, transmission == ""manual"")"

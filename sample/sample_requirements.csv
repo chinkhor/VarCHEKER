@@ -1,0 +1,13 @@
+Requirement ID,Valid,Rule,Parent Feature,Children Features
+ID-1,1,R1,root,abstract_car
+ID-2,1,R2,abstract_car,abstract_transmission
+ID-2.1,1,R4,abstract_transmission,"transmission==automatic, transmission==manual"
+ID-3,1,R3,abstract_car,clutch
+ID-4,1,R7,clutch,transmission==manual
+ID-5,1,R2,abstract_car,abstract_engine
+ID-5.1,1,R4,abstract_engine,"engine==petrol, engine==electric, engine==hybrid"
+ID-6,1,R2,abstract_car,abstract_color
+ID-6.1,1,R4,abstract_color,"color==black, color==red, color==white, color==silver"
+ID-7,1,R3,abstract_car,sunroof
+
+

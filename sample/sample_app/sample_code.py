@@ -1,21 +1,22 @@
 class CAR:
     BASE_COST = 15000
 
-    def __init__(self, transmission="manual", engine="petrol", color="black", sunroof=False):
+    def __init__(self, transmission="manual", engine="petrol", color="black", clutch=False):
         self.transmission = transmission
         self.engine = engine
         self.color = color
-        self.sunroof = sunroof
+        self.clutch = clutch
         self.price = CAR.BASE_COST
         self.compute_transmission_price()
         self.compute_engine_price()
+        self.compute_clutch_price()
         self.compute_color_price()
     
     def compute_transmission_price(self):
         if self.transmission == "automatic":
             self.price += 10000
-            if not self.sunroof:
-                self.price -= 2000
+        else:
+            self.price += 8000
 
     def compute_engine_price(self):
         if self.engine == "electric":
@@ -25,6 +26,12 @@ class CAR:
         else:
             self.price += 5000
 
+    def compute_clutch_price(self):
+        if self.clutch:
+            self.price += 1000
+            if self.transmission == 'automatic':
+                self.price += 2000
+        
     def check_color_discount_promotion(self):
         if self.color == "red":
             self.price -= 2000
@@ -44,10 +51,10 @@ class CAR:
         print(f"   transmission: {self.transmission}")
         print(f"   engine: {self.engine}")
         print(f"   color: {self.color}")
-        print(f"   sunroof: {self.sunroof}")
+        print(f"   clutch: {self.clutch}")
         print(f"price: {self.price}")
         
 if __name__=="__main__":
-    car = CAR(transmission="automatic", engine="petrol", color="red", sunroof=True)
+    car = CAR(transmission="automatic", engine="petrol", color="red", clutch=True)
     car.check_color_discount_promotion()
     car.compute_car_price()

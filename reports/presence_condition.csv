@@ -1,13 +1,15 @@
 01_Presence Condition,02_Total Lines in Code,03_Line Coverage Precentage
-(transmission == automatic),2,12.5
-!((engine == electric)) && !((engine == hybrid)),2,12.5
-(!((color == white) || (color == red))) && (color != black),2,12.5
-(!((color == white) || (color == red))) && !((color != black)),2,12.5
-(transmission == automatic) && !sunroof,1,6.25
-(engine == electric),1,6.25
-!((engine == electric)),1,6.25
-!((engine == electric)) && (engine == hybrid),1,6.25
-(color == red),1,6.25
-(color == white) || (color == red),1,6.25
-!((color == white) || (color == red)),1,6.25
-(!((color == white) || (color == red))) && (color != black) && (color == black),1,6.25
+!((transmission == automatic)),2,10.53
+!((engine == electric)) && !((engine == hybrid)),2,10.53
+clutch,2,10.53
+(!((color == white) || (color == red))) && (color != black),2,10.53
+(!((color == white) || (color == red))) && !((color != black)),2,10.53
+(transmission == automatic),1,5.26
+(engine == electric),1,5.26
+!((engine == electric)),1,5.26
+!((engine == electric)) && (engine == hybrid),1,5.26
+clutch && (transmission == automatic),1,5.26
+(color == red),1,5.26
+(color == white) || (color == red),1,5.26
+!((color == white) || (color == red)),1,5.26
+(!((color == white) || (color == red))) && (color != black) && (color == black),1,5.26
