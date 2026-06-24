@@ -1,13 +1,12 @@
 # VarCHEKER - A Variability-based Static Analyzer for Python Applications
 
-VarCHEKER analyzes variability requirements and Python source code to detect inconsistencies and generate test configurations for use in variability testing. User can setup to show the results through a real-time Grafana dashboard. Additionally, VarCHEKER generates feature model that can be inspected and visualized using FeatureIDE.
+VarCHEKER analyzes variability requirements and Python source code to detect inconsistencies and generate test configurations for use in variability testing. The user can display the results via a real-time Grafana dashboard. Additionally, VarCHEKER generates feature model that can be inspected and visualized using FeatureIDE.
 
 VarCHEKER is being used/evaluated in a company, and the data used in that evaluation is proprietary. Our repository thus contains sample data (the requirements and source code) in `sample` folder,  and  VarCHEKER’s analysis results (in `reports` folder) on that data, for demonstration and replication purposes.
 
 ## Setup and Installation
 
-1. Download [VarCHEKER-v1.0.0](https://github.com/chinkhor/VarCHEKER/releases/tag/v1.0.0)
-2. Run `source scripts/setup.sh` at terminal to create Python Virtual Environment and install dependencies
+1. Run `source scripts/setup.sh` at terminal to create Python Virtual Environment and install dependencies
 
 ## Usage
 
