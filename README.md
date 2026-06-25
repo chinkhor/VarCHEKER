@@ -79,4 +79,5 @@ Features that are not directly configurable in the source code are prefixed with
 
 ## Demo
 
-Demo video is available here
+Demo video is available [here](https://www.youtube.com/watch?v=Ms3ZyrRplsw)
+
